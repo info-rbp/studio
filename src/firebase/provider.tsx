@@ -2,7 +2,7 @@
 
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
 import { FirebaseApp } from 'firebase/app';
-import { Firestore, doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { Firestore, doc, setDoc } from 'firebase/firestore';
 import { Auth, User, onAuthStateChanged } from 'firebase/auth';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener'
 
@@ -85,7 +85,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
             id: firebaseUser.uid,
             email: firebaseUser.email,
             isAnonymous: firebaseUser.isAnonymous,
-            createdAt: serverTimestamp() 
+            createdAt: new Date()
           }, { merge: true });
         }
         setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: null });

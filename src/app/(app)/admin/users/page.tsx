@@ -16,7 +16,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Switch } from '@/components/ui/switch';
-import { useCollection, useDoc, useFirestore, useMemoFirebase, setDocumentNonBlocking, deleteDocumentNonBlocking, useAuth, updateDocumentNonBlocking } from '@/firebase';
+import { useCollection, useDoc, useFirestore, useMemoFirebase, setDocumentNonBlocking, deleteDocumentNonBlocking, useAuth } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { WithId } from '@/firebase/firestore/use-collection';
 
@@ -56,7 +56,7 @@ function UserRow({ user }: { user: WithId<User> }) {
   
   return (
     <TableRow>
-      <TableCell>{user.email || user.id}</TableCell>
+      <TableCell>{user.email || 'N/A'}</TableCell>
       <TableCell>{user.createdAt ? new Date(user.createdAt.seconds * 1000).toLocaleString() : 'N/A'}</TableCell>
       <TableCell>{user.isAnonymous ? 'Yes' : 'No'}</TableCell>
       <TableCell>
@@ -93,7 +93,7 @@ export default function UserManagementPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>User</TableHead>
+                <TableHead>Email</TableHead>
                 <TableHead>Created At</TableHead>
                 <TableHead>Is Anonymous</TableHead>
                 <TableHead>Is Admin</TableHead>
