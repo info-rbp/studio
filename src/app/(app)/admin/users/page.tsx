@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/table';
 import { Switch } from '@/components/ui/switch';
 import { useCollection, useDoc, useFirestore, useMemoFirebase, setDocumentNonBlocking, deleteDocumentNonBlocking, useAuth, updateDocumentNonBlocking } from '@/firebase';
-import { collection, doc, serverTimestamp } from 'firebase/firestore';
+import { collection, doc } from 'firebase/firestore';
 import { WithId } from '@/firebase/firestore/use-collection';
 
 interface User {
@@ -43,6 +43,10 @@ function UserRow({ user }: { user: WithId<User> }) {
 
   const handleAdminToggle = (isAdmin: boolean) => {
     if (!adminUserRef) return;
+    if (user.id === auth.currentUser?.uid && !isAdmin) {
+        alert("You cannot revoke your own admin privileges.");
+        return;
+    }
     if (isAdmin) {
       setDocumentNonBlocking(adminUserRef, { isAdmin: true }, { merge: true });
     } else {
@@ -50,21 +54,6 @@ function UserRow({ user }: { user: WithId<User> }) {
     }
   };
   
-  const userDocRef = useMemoFirebase(
-      () => (firestore ? doc(firestore, 'users', user.id) : null),
-      [firestore, user.id]
-  )
-
-  // When a user signs up with email/password, we should update their doc
-  if (user.isAnonymous === false && !user.email && auth.currentUser?.email) {
-      if(userDocRef) {
-        updateDocumentNonBlocking(userDocRef, {
-            email: auth.currentUser.email,
-            updatedAt: serverTimestamp(),
-        });
-      }
-  }
-
   return (
     <TableRow>
       <TableCell>{user.email || user.id}</TableCell>
