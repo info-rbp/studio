@@ -135,6 +135,16 @@ service cloud.firestore {
          */
         match /milestoneTemplates/{milestoneTemplateId} {
             allow read, write: if isAdmin();
+
+            /**
+             * @description Allows admins to read and write sub-milestone template data within a milestone template.
+             * @path /workspaces/{workspaceId}/milestoneTemplates/{milestoneTemplateId}/subMilestones/{subMilestoneId}
+             * @allow (get, list, create, update, delete) if isAdmin()
+             * @principle Enforces admin-only access for sub-milestone template management.
+             */
+            match /subMilestones/{subMilestoneId} {
+                allow read, write: if isAdmin();
+            }
         }
 
         /**

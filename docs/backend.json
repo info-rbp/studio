@@ -241,6 +241,31 @@
         "name"
       ]
     },
+    "SubMilestoneTemplate": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "SubMilestoneTemplate",
+      "type": "object",
+      "description": "Represents a preset sub-milestone item within a milestone template.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the sub-milestone template entity."
+        },
+        "wbsCode": {
+          "type": "string",
+          "description": "The WBS code for the sub-milestone (e.g., '1.1')."
+        },
+        "name": {
+          "type": "string",
+          "description": "The sub-milestone template's name (e.g., Project Kick-Off)."
+        }
+      },
+      "required": [
+        "id",
+        "wbsCode",
+        "name"
+      ]
+    },
     "GACost": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "GACost",
@@ -675,6 +700,30 @@
             {
               "name": "milestoneTemplateId",
               "description": "The unique identifier for the milestone template entity."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/workspaces/{workspaceId}/milestoneTemplates/{milestoneTemplateId}/subMilestones/{subMilestoneId}",
+        "definition": {
+          "entityName": "SubMilestoneTemplate",
+          "schema": {
+            "$ref": "#/backend/entities/SubMilestoneTemplate"
+          },
+          "description": "Stores sub-milestone templates within a milestone template.",
+          "params": [
+            {
+              "name": "workspaceId",
+              "description": "The ID of the workspace (e.g., 'jl2g')."
+            },
+            {
+              "name": "milestoneTemplateId",
+              "description": "The unique identifier for the milestone template entity."
+            },
+            {
+              "name": "subMilestoneId",
+              "description": "The unique identifier for the sub-milestone template entity."
             }
           ]
         }
