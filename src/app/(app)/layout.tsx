@@ -22,15 +22,26 @@ import {
 } from '@/components/ui/avatar';
 import { Icons } from '@/components/icons';
 import { LayoutDashboard, Settings, BookOpen, Loader2 } from 'lucide-react';
-import { useUser, useAuth } from '@/firebase';
+import { useUser, useAuth, useFirestore, useMemoFirebase } from '@/firebase';
 import { signInAnonymously } from 'firebase/auth';
+import { doc } from 'firebase/firestore';
+import { useDoc } from '@/firebase/firestore/use-doc';
 
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const auth = useAuth();
+  const firestore = useFirestore();
   const { user, userProfile, isUserLoading } = useUser();
   const [isSigningIn, setIsSigningIn] = useState(true);
+
+  // Check if the current user is an admin
+  const adminUserDocRef = useMemoFirebase(
+    () => (user ? doc(firestore, `adminUsers/${user.uid}`) : null),
+    [user, firestore]
+  );
+  const { data: adminUser, isLoading: isAdminLoading } = useDoc(adminUserDocRef);
+
 
   useEffect(() => {
     if (isUserLoading) {
@@ -57,7 +68,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return name.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase();
   };
 
-  if (isSigningIn || isUserLoading) {
+  if (isSigningIn || isUserLoading || isAdminLoading) {
     return (
         <div className="flex h-screen w-full items-center justify-center bg-background">
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -86,7 +97,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
-            {userProfile?.accessLevel === 'Admin' && (
+            {!!adminUser && (
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
@@ -122,7 +133,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     </Avatar>
                     <div className="flex flex-col text-sm group-data-[collapsible=icon]:hidden">
                     <span className="font-medium text-sidebar-foreground truncate">{userProfile.fullName}</span>
-                    <span className="text-xs text-muted-foreground">{userProfile.accessLevel}</span>
+                    <span className="text-xs text-muted-foreground">{!!adminUser ? "Admin" : userProfile.accessLevel}</span>
                     </div>
                 </>
               )}

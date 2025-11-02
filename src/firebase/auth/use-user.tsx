@@ -47,8 +47,8 @@ export const useUser = (auth: Auth, firestore: Firestore): UserAuthState => {
   });
 
   useEffect(() => {
-    if (!auth) {
-      setUserAuthState({ user: null, userProfile: null, isUserLoading: false, userError: new Error("Auth service not provided.") });
+    if (!auth || !firestore) {
+      setUserAuthState({ user: null, userProfile: null, isUserLoading: false, userError: new Error("Auth or Firestore service not provided.") });
       return;
     }
 
@@ -58,33 +58,9 @@ export const useUser = (auth: Auth, firestore: Firestore): UserAuthState => {
         if (firebaseUser) {
           const userDocRef = doc(firestore, 'users', firebaseUser.uid);
           
-          // Check if the user document exists
-          const docSnap = await getDoc(userDocRef);
-
-          if (!docSnap.exists()) {
-            // Document doesn't exist, so create it.
-            const newUserProfile: UserProfile = {
-              id: firebaseUser.uid,
-              fullName: firebaseUser.displayName || 'Anonymous User',
-              email: firebaseUser.email || null, // Will be null for anonymous
-              accessLevel: 'Tender Lead', // All new users default to base level
-              isDeletable: true,
-              isAnonymous: firebaseUser.isAnonymous,
-              createdAt: serverTimestamp(),
-            };
-            try {
-              await setDoc(userDocRef, newUserProfile);
-              console.log(`Created user document for anonymous user: ${firebaseUser.uid}`);
-            } catch (error) {
-              console.error("Failed to create user document:", error);
-              setUserAuthState({ user: firebaseUser, userProfile: null, isUserLoading: false, userError: error as Error });
-              return; // Stop further execution on error
-            }
-          }
-          
-          // Now set up the real-time listener for the profile
+          // Set up the real-time listener for the profile first
           const unsubscribeProfile = onSnapshot(userDocRef, 
-            (docSnap) => {
+            async (docSnap) => {
               if (docSnap.exists()) {
                 setUserAuthState({ 
                   user: firebaseUser, 
@@ -93,8 +69,24 @@ export const useUser = (auth: Auth, firestore: Firestore): UserAuthState => {
                   userError: null 
                 });
               } else {
-                 // This case should be rare after the create logic above, but good to have
-                setUserAuthState({ user: firebaseUser, userProfile: null, isUserLoading: false, userError: new Error("User profile not found after creation attempt.") });
+                 // Document doesn't exist, so create it.
+                const newUserProfile: UserProfile = {
+                  id: firebaseUser.uid,
+                  fullName: firebaseUser.displayName || 'Anonymous User',
+                  email: firebaseUser.email || null, // Will be null for anonymous
+                  accessLevel: 'Tender Lead', // All new users default to base level
+                  isDeletable: true,
+                  isAnonymous: firebaseUser.isAnonymous,
+                  createdAt: serverTimestamp(),
+                };
+                try {
+                  await setDoc(userDocRef, newUserProfile);
+                  console.log(`Created user document for anonymous user: ${firebaseUser.uid}`);
+                  // The listener will pick up the new document and update the state.
+                } catch (error) {
+                  console.error("Failed to create user document:", error);
+                  setUserAuthState({ user: firebaseUser, userProfile: null, isUserLoading: false, userError: error as Error });
+                }
               }
             },
             (error) => {
