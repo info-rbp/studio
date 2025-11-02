@@ -5,8 +5,6 @@ import { projectSchema, type Project } from '@/lib/types';
 import { getAdminApp } from '@/firebase/admin';
 import { z } from 'zod';
 import { auth, firestore } from 'firebase-admin';
-import { headers } from 'next/headers';
-
 
 const newUserSchema = z.object({
   fullName: z.string().min(1, 'Full Name is required.'),
@@ -45,26 +43,20 @@ export async function createProjectWithAI(description: string) {
   }
 }
 
-async function getUserIdFromToken() {
-    getAdminApp();
-    const headersList = headers();
-    const authorization = headersList.get('Authorization');
-    if (authorization?.startsWith('Bearer ')) {
-        const idToken = authorization.split('Bearer ')[1];
-        try {
-            const decodedToken = await auth().verifyIdToken(idToken);
-            return decodedToken.uid;
-        } catch (error) {
-            console.error('Error verifying token:', error);
-            return null;
-        }
+async function getUserIdFromToken(idToken: string) {
+    try {
+        getAdminApp();
+        const decodedToken = await auth().verifyIdToken(idToken);
+        return decodedToken.uid;
+    } catch (error) {
+        console.error('Error verifying token:', error);
+        return null;
     }
-    return null;
 }
 
-export async function createProject(projectData: Project) {
+export async function createProject(projectData: Project, idToken: string) {
   try {
-    const ownerId = await getUserIdFromToken();
+    const ownerId = await getUserIdFromToken(idToken);
     if (!ownerId) {
       return { success: false, error: 'Authentication failed. Could not identify user.' };
     }

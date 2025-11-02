@@ -117,9 +117,8 @@ export function ProjectCreationWizard() {
     
     // Get the auth token to pass to the server action
     const idToken = await currentUser.getIdToken();
-
-    // The fetch call is implicitly handled by Next.js Server Actions
-    const result = await createProject(data);
+    
+    const result = await createProject(data, idToken);
     
     if(result.success) {
       toast({
