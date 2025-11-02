@@ -142,9 +142,9 @@ export function ProjectCreationWizard() {
             <DialogDescription>How would you like to create your project?</DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-1 gap-4 py-4 md:grid-cols-3">
-            <button onClick={() => setWizardMode('ai')} className="flex flex-col items-center justify-center gap-2 rounded-lg border p-6 text-center transition-all hover:bg-accent hover:text-accent-foreground">
-              <Sparkles className="h-8 w-8 text-accent" />
-              <span className="font-semibold">Generate with AI</span>
+            <button className="flex flex-col items-center justify-center gap-2 rounded-lg border p-6 text-center disabled:opacity-50" disabled>
+              <Sparkles className="h-8 w-8 text-muted-foreground" />
+              <span className="font-semibold text-muted-foreground">Unavailable</span>
             </button>
             <button onClick={() => setWizardMode('manual')} className="flex flex-col items-center justify-center gap-2 rounded-lg border p-6 text-center transition-all hover:bg-accent hover:text-accent-foreground">
               <FileText className="h-8 w-8 text-primary" />
