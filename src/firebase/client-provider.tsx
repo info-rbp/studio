@@ -10,13 +10,12 @@ interface FirebaseClientProviderProps {
   children: ReactNode;
 }
 
+// Initialize Firebase services once when the module is loaded.
+const firebaseServices = initializeFirebase();
+
 export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [hasInitialized, setHasInitialized] = useState(false);
-
-  const firebaseServices = useMemo(() => {
-    return initializeFirebase();
-  }, []); 
 
   useEffect(() => {
     if (hasInitialized) return;
@@ -43,7 +42,7 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
     });
 
     return () => unsubscribe();
-  }, [firebaseServices, hasInitialized]);
+  }, [hasInitialized]);
 
 
   if (isLoading) {
