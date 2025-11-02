@@ -8,7 +8,7 @@ export default function HomePage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Redirect directly to the dashboard, bypassing login
+    // Redirect directly to the dashboard, bypassing login for now.
     router.push('/dashboard');
   }, [router]);
 
