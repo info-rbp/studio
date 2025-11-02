@@ -17,7 +17,7 @@
  * - Users can only access their own profile data in `/users/{userId}`.
  * - Only designated admins can create, update, or delete workspace settings.
  * - Projects are owned by a specific user, who has full access to the project and its subcollections.
- * - Listing of users or admin users is explicitly denied.
+ * - Listing of users is only permitted for admins. Listing admin users is explicitly denied.
  *
  * Denormalization for Authorization:
  * The `Project` entity contains the `ownerId` field, which is used to determine project ownership. This avoids the need for complex queries or joins to determine if a user has access to a project.
@@ -26,20 +26,25 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    function isAdmin() {
+      return exists(/databases/$(database)/documents/adminUsers/$(request.auth.uid));
+    }
+
     /**
      * @description Allows users to read and write their own user profile data.
      * @path /users/{userId}
-     * @allow (create, update, delete, get, list) if request.auth.uid == userId
-     * @deny (create, update, delete, get, list) if request.auth.uid != userId
-     * @principle Enforces document ownership for all operations on user profiles.
+     * @allow (create, update, delete, get) if request.auth.uid == userId
+     * @allow (list) if isAdmin()
+     * @deny (list) if !isAdmin()
+     * @principle Enforces document ownership for individual operations and admin-only for list operations.
      */
     match /users/{userId} {
       function isOwner(userId) {
         return request.auth.uid == userId;
       }
 
-      allow get: if isOwner(userId);
-      allow list: if false; // Listing users is not permitted
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
 
       allow create: if isOwner(userId);
       allow update: if isOwner(userId);
@@ -55,17 +60,7 @@ service cloud.firestore {
      * @principle Enforces admin-only access for workspace settings.
      */
     match /workspaces/{workspaceId} {
-        function isAdmin() {
-          // In a real app, you'd use a more secure method like checking a custom claim or an admin collection.
-          // For now, any logged-in user is considered an admin for development purposes.
-          return request.auth != null;
-        }
-
-        allow get, list: if isAdmin();
-
-        allow create: if isAdmin();
-        allow update: if isAdmin() && resource != null;
-        allow delete: if isAdmin() && resource != null;
+        allow read, write: if isAdmin();
 
         /**
          * @description Allows admins to read and write personnel data within a workspace.
@@ -146,14 +141,16 @@ service cloud.firestore {
                 allow read, write: if isAdmin();
             }
         }
-
-        /**
-         * @description Allows admins to read and write G&A cost data within a workspace.
-         * @path /workspaces/{workspaceId}/ga_costs/{gaCostId}
-         * @allow (get, list, create, update, delete) if isAdmin()
-         * @principle Enforces admin-only access for G&A cost management.
-         */
-        match /ga_costs/{gaCostId} {
+        
+        match /gaAccounts/{gaAccountId} {
+            allow read, write: if isAdmin();
+        }
+        
+        match /gaAllocation/{gaAllocationId} {
+            allow read, write: if isAdmin();
+        }
+        
+        match /generalSettings/{settingId} {
             allow read, write: if isAdmin();
         }
     }
@@ -196,11 +193,7 @@ service cloud.firestore {
         return get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId == request.auth.uid;
       }
 
-      allow get, list: if isProjectOwner(projectId);
-
-      allow create: if isProjectOwner(projectId);
-      allow update: if isProjectOwner(projectId) && resource != null;
-      allow delete: if isProjectOwner(projectId) && resource != null;
+      allow read, write: if isProjectOwner(projectId);
     }
 
     /**
@@ -216,11 +209,7 @@ service cloud.firestore {
         return get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId == request.auth.uid;
       }
 
-      allow get, list: if isProjectOwner(projectId);
-
-      allow create: if isProjectOwner(projectId);
-      allow update: if isProjectOwner(projectId) && resource != null;
-      allow delete: if isProjectOwner(projectId) && resource != null;
+      allow read, write: if isProjectOwner(projectId);
     }
 
     /**
@@ -236,11 +225,7 @@ service cloud.firestore {
         return get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId == request.auth.uid;
       }
 
-      allow get, list: if isProjectOwner(projectId);
-
-      allow create: if isProjectOwner(projectId);
-      allow update: if isProjectOwner(projectId) && resource != null;
-      allow delete: if isProjectOwner(projectId) && resource != null;
+      allow read, write: if isProjectOwner(projectId);
     }
 
     /**
@@ -255,10 +240,10 @@ service cloud.firestore {
         return request.auth.uid == adminUserId;
       }
 
-      allow get: if isSelf(adminUserId);
+      allow get: if isSelf(adminUserId) || isAdmin();
       allow list: if false;  // Listing admin users is not permitted
 
-      allow create, update, delete: if false; // Admin users are managed server-side
+      allow create, update, delete: if isAdmin();
     }
   }
 }
