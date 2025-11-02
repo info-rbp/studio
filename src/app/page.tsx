@@ -2,12 +2,11 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUser, useAuth, initiateAnonymousSignIn } from '@/firebase';
+import { useUser } from '@/firebase';
 import { Loader2 } from 'lucide-react';
 
 export default function HomePage() {
   const { user, isUserLoading } = useUser();
-  const auth = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -15,10 +14,11 @@ export default function HomePage() {
       if (user) {
         router.push('/dashboard');
       } else {
-        initiateAnonymousSignIn(auth);
+        // Instead of anonymous sign-in, redirect to a login page
+        router.push('/login');
       }
     }
-  }, [user, isUserLoading, router, auth]);
+  }, [user, isUserLoading, router]);
 
   return (
     <div className="flex h-screen w-full items-center justify-center bg-background">

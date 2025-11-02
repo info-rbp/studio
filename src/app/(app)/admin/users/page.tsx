@@ -17,12 +17,13 @@ import {
 } from '@/components/ui/table';
 import { Switch } from '@/components/ui/switch';
 import { useCollection, useDoc, useFirestore, useMemoFirebase, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
+import { collection, doc, serverTimestamp } from 'firebase/firestore';
 import { WithId } from '@/firebase/firestore/use-collection';
 
 interface User {
     createdAt: { seconds: number, nanoseconds: number };
     isAnonymous: boolean;
+    email?: string;
 }
 
 interface AdminUser {
@@ -44,14 +45,29 @@ function UserRow({ user }: { user: WithId<User> }) {
     if (isAdmin) {
       setDocumentNonBlocking(adminUserRef, { isAdmin: true }, { merge: true });
     } else {
-      deleteDocumentNonBlocking(adminUserRef);
+      deleteDocumentNonBlocking(adminUserf);
     }
   };
+  
+  const userDocRef = useMemoFirebase(
+      () => (firestore ? doc(firestore, 'users', user.id) : null),
+      [firestore, user.id]
+  )
+
+  // When a user signs up with email/password, we should update their doc
+  if (user.isAnonymous === false && !user.email && auth.currentUser?.email) {
+      if(userDocRef) {
+        updateDocumentNonBlocking(userDocRef, {
+            email: auth.currentUser.email,
+            updatedAt: serverTimestamp(),
+        });
+      }
+  }
 
   return (
     <TableRow>
-      <TableCell>{user.id}</TableCell>
-      <TableCell>{new Date(user.createdAt.seconds * 1000).toLocaleString()}</TableCell>
+      <TableCell>{user.email || user.id}</TableCell>
+      <TableCell>{user.createdAt ? new Date(user.createdAt.seconds * 1000).toLocaleString() : 'N/A'}</TableCell>
       <TableCell>{user.isAnonymous ? 'Yes' : 'No'}</TableCell>
       <TableCell>
         <Switch
@@ -87,7 +103,7 @@ export default function UserManagementPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>User ID</TableHead>
+                <TableHead>User</TableHead>
                 <TableHead>Created At</TableHead>
                 <TableHead>Is Anonymous</TableHead>
                 <TableHead>Is Admin</TableHead>
