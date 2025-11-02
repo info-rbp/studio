@@ -66,87 +66,68 @@ service cloud.firestore {
         allow create: if isAdmin();
         allow update: if isAdmin() && resource != null;
         allow delete: if isAdmin() && resource != null;
-    }
 
-    /**
-     * @description Allows admins to read and write personnel data within a workspace.
-     * @path /workspaces/{workspaceId}/personnel/{personnelId}
-     * @allow (get, list) if isAdmin()
-     * @allow (create, update, delete) if isAdmin()
-     * @deny (get, list, create, update, delete) if !isAdmin()
-     * @principle Enforces admin-only access for personnel management.
-     */
-    match /workspaces/{workspaceId}/personnel/{personnelId} {
-        function isAdmin() {
-          return request.auth != null;
+        /**
+         * @description Allows admins to read and write personnel data within a workspace.
+         * @path /workspaces/{workspaceId}/personnel/{personnelId}
+         * @allow (get, list, create, update, delete) if isAdmin()
+         * @principle Enforces admin-only access for personnel management.
+         */
+        match /personnel/{personnelId} {
+            allow read, write: if isAdmin();
         }
 
-        allow get, list: if isAdmin();
-
-        allow create: if isAdmin();
-        allow update: if isAdmin() && resource != null;
-        allow delete: if isAdmin() && resource != null;
-    }
-
-    /**
-     * @description Allows admins to read and write material data within a workspace.
-     * @path /workspaces/{workspaceId}/materials/{materialId}
-     * @allow (get, list) if isAdmin()
-     * @allow (create, update, delete) if isAdmin()
-     * @deny (get, list, create, update, delete) if !isAdmin()
-     * @principle Enforces admin-only access for material management.
-     */
-    match /workspaces/{workspaceId}/materials/{materialId} {
-        function isAdmin() {
-          return request.auth != null;
+        /**
+         * @description Allows admins to read and write role data within a workspace.
+         * @path /workspaces/{workspaceId}/roles/{roleId}
+         * @allow (get, list, create, update, delete) if isAdmin()
+         * @principle Enforces admin-only access for role management.
+         */
+        match /roles/{roleId} {
+            allow read, write: if isAdmin();
         }
 
-        allow get, list: if isAdmin();
-
-        allow create: if isAdmin();
-        allow update: if isAdmin() && resource != null;
-        allow delete: if isAdmin() && resource != null;
-    }
-
-    /**
-     * @description Allows admins to read and write milestone template data within a workspace.
-     * @path /workspaces/{workspaceId}/milestoneTemplates/{milestoneTemplateId}
-     * @allow (get, list) if isAdmin()
-     * @allow (create, update, delete) if isAdmin()
-     * @deny (get, list, create, update, delete) if !isAdmin()
-     * @principle Enforces admin-only access for milestone template management.
-     */
-    match /workspaces/{workspaceId}/milestoneTemplates/{milestoneTemplateId} {
-        function isAdmin() {
-          return request.auth != null;
+        /**
+         * @description Allows admins to read and write level data within a workspace.
+         * @path /workspaces/{workspaceId}/levels/{levelId}
+         * @allow (get, list, create, update, delete) if isAdmin()
+         * @principle Enforces admin-only access for level management.
+         */
+        match /levels/{levelId} {
+            allow read, write: if isAdmin();
         }
 
-        allow get, list: if isAdmin();
-
-        allow create: if isAdmin();
-        allow update: if isAdmin() && resource != null;
-        allow delete: if isAdmin() && resource != null;
-    }
-
-    /**
-     * @description Allows admins to read and write G&A cost data within a workspace.
-     * @path /workspaces/{workspaceId}/ga_costs/{gaCostId}
-     * @allow (get, list) if isAdmin()
-     * @allow (create, update, delete) if isAdmin()
-     * @deny (get, list, create, update, delete) if !isAdmin()
-     * @principle Enforces admin-only access for G&A cost management.
-     */
-    match /workspaces/{workspaceId}/ga_costs/{gaCostId} {
-        function isAdmin() {
-          return request.auth != null;
+        /**
+         * @description Allows admins to read and write material data within a workspace.
+         * @path /workspaces/{workspaceId}/materials/{materialId}
+         * @allow (get, list, create, update, delete) if isAdmin()
+         * @principle Enforces admin-only access for material management.
+         */
+        match /materials/{materialId} {
+            allow read, write: if isAdmin();
         }
 
-        allow get, list: if isAdmin();
+        /**
+         * @description Allows admins to read and write milestone template data within a workspace.
+         * @path /workspaces/{workspaceId}/milestoneTemplates/{milestoneTemplateId}
+         * @allow (get, list, create, update, delete) if isAdmin()
+         * @principle Enforces admin-only access for milestone template management.
+         */
+        match /milestoneTemplates/{milestoneTemplateId} {
+            allow read, write: if isAdmin();
+        }
 
-        allow create: if isAdmin();
-        allow update: if isAdmin() && resource != null;
-        allow delete: if isAdmin() && resource != null;
+        /**
+         * @description Allows admins to read and write G&A cost data within a workspace.
+         * @path /workspaces/{workspaceId}/ga_costs/{gaCostId}
+         * @allow (get, list, create, update, delete) if isAdmin()
+         * @principle Enforces admin-only access for G&A cost management.
+         */
+        match /ga_costs/{gaCostId} {
+            allow read, write: if isAdmin();
+        }
     }
+
 
     /**
      * @description Allows project owners to read and write their own project data.
@@ -251,3 +232,4 @@ service cloud.firestore {
     }
   }
 }
+    
