@@ -56,6 +56,8 @@ export function ProjectCreationWizard() {
     resolver: zodResolver(projectSchema),
     defaultValues: {
       projectName: '',
+      tenderId: '',
+      client: '',
       contractType: 'Fixed Price',
       securityClassification: 'Unclassified',
       projectStartDate: new Date(),
