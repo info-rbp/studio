@@ -22,43 +22,38 @@ import {
 } from '@/components/ui/avatar';
 import { Icons } from '@/components/icons';
 import { LayoutDashboard, Settings, BookOpen, Loader2 } from 'lucide-react';
-import { useUser, useAuth, useFirestore, useMemoFirebase } from '@/firebase';
+import { useUser, useAuth } from '@/firebase';
 import { signInAnonymously } from 'firebase/auth';
-import { doc } from 'firebase/firestore';
-import { useDoc } from '@/firebase/firestore/use-doc';
 
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const auth = useAuth();
-  const firestore = useFirestore();
   const { user, userProfile, isUserLoading } = useUser();
   const [isSigningIn, setIsSigningIn] = useState(true);
 
-  // Check if the current user is an admin
-  const adminUserDocRef = useMemoFirebase(
-    () => (user ? doc(firestore, `adminUsers/${user.uid}`) : null),
-    [user, firestore]
-  );
-  const { data: adminUser, isLoading: isAdminLoading } = useDoc(adminUserDocRef);
-
-
   useEffect(() => {
+    // This effect manages the anonymous sign-in flow.
     if (isUserLoading) {
-        setIsSigningIn(true);
-        return;
+      // If the user hook is still loading, we are effectively in a "signing in" state.
+      setIsSigningIn(true);
+      return;
     }
+    
     if (!user) {
+      // If loading is finished and there's still no user, trigger anonymous sign-in.
       console.log("No user found. Signing in anonymously...");
       signInAnonymously(auth).catch((error) => {
-        console.error("Error signing in anonymously:", error);
-        // Handle critical error - maybe show an error page
-        setIsSigningIn(false);
+        console.error("Critical: Anonymous sign-in failed:", error);
+        // In a real app, you might want to show a persistent error screen here.
+        setIsSigningIn(false); // Stop loading even on error to prevent infinite loop.
       });
-      // The onAuthStateChanged listener in useUser will handle the user state update
+      // The onAuthStateChanged listener within the useUser hook will handle the state update
+      // once sign-in is successful, which will cause this effect to re-run.
     } else {
-        console.log("User is logged in:", user.uid);
-        setIsSigningIn(false);
+      // If we have a user, the sign-in process is complete.
+      console.log("User is authenticated:", user.uid);
+      setIsSigningIn(false);
     }
   }, [user, isUserLoading, auth]);
 
@@ -67,8 +62,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     if (!name) return 'A';
     return name.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase();
   };
-
-  if (isSigningIn || isUserLoading || isAdminLoading) {
+  
+  // Render a full-screen loader while the initial sign-in/auth check is happening.
+  // This prevents any child components from rendering before a user is available.
+  if (isSigningIn) {
     return (
         <div className="flex h-screen w-full items-center justify-center bg-background">
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -131,7 +128,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     </Avatar>
                     <div className="flex flex-col text-sm group-data-[collapsible=icon]:hidden">
                     <span className="font-medium text-sidebar-foreground truncate">{userProfile.fullName}</span>
-                    <span className="text-xs text-muted-foreground">{!!adminUser ? "Admin" : userProfile.accessLevel}</span>
+                    <span className="text-xs text-muted-foreground">{userProfile.accessLevel}</span>
                     </div>
                 </>
               )}
