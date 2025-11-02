@@ -34,7 +34,7 @@ const adminSections = [
     title: 'User Management',
     description: 'Promote or revoke Admin privileges for users.',
     href: '/admin/users',
-    icon: ShieldCheck,
+    icon: Users,
   },
   {
     title: 'Integrations Management',
@@ -47,7 +47,6 @@ const adminSections = [
 export default function AdminHubPage() {
   return (
     <div className="flex flex-1 flex-col gap-4">
-      <h1 className="text-2xl font-bold">Admin Settings</h1>
       <p className="text-muted-foreground">
         This is the central hub for managing your application's master data. Select a category below to manage its settings.
       </p>
