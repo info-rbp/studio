@@ -62,7 +62,8 @@ const personnelSchema = z.object({
   role: z.string().min(1, 'Role is required.'),
   level: z.string().min(1, 'Level is required.'),
   standardRate: z.coerce.number().min(0, 'Standard rate must be a positive number.'),
-  clearanceLevel: z.string().min(1, 'Clearance level is required.'),
+  clearanceLevel: z.enum(['N/A', 'Baseline', 'NV1', 'NV2']),
+  engagementType: z.enum(['Full-Time', 'Part-Time', 'Subcontractor']),
 });
 type PersonnelFormData = z.infer<typeof personnelSchema>;
 
@@ -77,7 +78,7 @@ const levelSchema = z.object({
 type LevelFormData = z.infer<typeof levelSchema>;
 
 // Input Control Management Component
-function InputControlManager({ schema, collectionName, formTitle, formDescription, formLabel }: any) {
+function InputControlManager({ schema, collectionName, formTitle, formLabel }: any) {
   const [isOpen, setIsOpen] = useState(false);
   const firestore = useFirestore();
   const collectionRef = useMemoFirebase(
@@ -121,7 +122,6 @@ function InputControlManager({ schema, collectionName, formTitle, formDescriptio
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Add New {formTitle}</DialogTitle>
-                  <DialogDescription>{formDescription}</DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -209,7 +209,8 @@ export default function PersonnelSettingsPage() {
       role: '',
       level: '',
       standardRate: 0,
-      clearanceLevel: '',
+      clearanceLevel: 'N/A',
+      engagementType: 'Full-Time',
     },
   });
 
@@ -225,9 +226,9 @@ export default function PersonnelSettingsPage() {
       <h1 className="text-2xl font-bold">Manage Personnel</h1>
         <Tabs defaultValue="personnel">
           <TabsList>
-            <TabsTrigger value="personnel">Manage Personnel</TabsTrigger>
-            <TabsTrigger value="roles">Manage Roles</TabsTrigger>
-            <TabsTrigger value="levels">Manage Levels</TabsTrigger>
+            <TabsTrigger value="personnel">Personnel</TabsTrigger>
+            <TabsTrigger value="roles">Roles</TabsTrigger>
+            <TabsTrigger value="levels">Employee Levels</TabsTrigger>
           </TabsList>
           
           {/* Manage Personnel Tab */}
@@ -245,7 +246,7 @@ export default function PersonnelSettingsPage() {
                           </span>
                         </Button>
                       </DialogTrigger>
-                      <DialogContent>
+                      <DialogContent className="sm:max-w-[625px]">
                         <DialogHeader>
                           <DialogTitle>Add New Personnel</DialogTitle>
                           <DialogDescription>
@@ -293,7 +294,7 @@ export default function PersonnelSettingsPage() {
                                 name="level"
                                 render={({ field }) => (
                                     <FormItem>
-                                    <FormLabel>Level</FormLabel>
+                                    <FormLabel>Employee Level</FormLabel>
                                      <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl>
                                             <SelectTrigger>
@@ -315,10 +316,16 @@ export default function PersonnelSettingsPage() {
                                 name="clearanceLevel"
                                 render={({ field }) => (
                                     <FormItem>
-                                    <FormLabel>Clearance</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="e.g., NV1" {...field} />
-                                    </FormControl>
+                                    <FormLabel>Security Clearance</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl>
+                                        <SelectContent>
+                                            <SelectItem value="N/A">N/A</SelectItem>
+                                            <SelectItem value="Baseline">Baseline</SelectItem>
+                                            <SelectItem value="NV1">NV1</SelectItem>
+                                            <SelectItem value="NV2">NV2</SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                     <FormMessage />
                                     </FormItem>
                                 )}
@@ -337,6 +344,24 @@ export default function PersonnelSettingsPage() {
                                 )}
                                 />
                             </div>
+                            <FormField
+                                control={personnelForm.control}
+                                name="engagementType"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Engagement Type</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl>
+                                        <SelectContent>
+                                            <SelectItem value="Full-Time">Full-Time</SelectItem>
+                                            <SelectItem value="Part-Time">Part-Time</SelectItem>
+                                            <SelectItem value="Subcontractor">Subcontractor</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                    </FormItem>
+                                )}
+                                />
                             <DialogFooter>
                               <Button type="button" variant="outline" onClick={() => setIsPersonnelDialogOpen(false)}>
                                 Cancel
@@ -360,6 +385,7 @@ export default function PersonnelSettingsPage() {
                         <TableHead>Role</TableHead>
                         <TableHead>Level</TableHead>
                         <TableHead>Clearance</TableHead>
+                        <TableHead>Engagement Type</TableHead>
                         <TableHead className="text-right">Standard Rate</TableHead>
                         <TableHead>
                             <span className="sr-only">Actions</span>
@@ -369,14 +395,14 @@ export default function PersonnelSettingsPage() {
                     <TableBody>
                         {isLoadingPersonnel && (
                         <TableRow>
-                            <TableCell colSpan={6} className="text-center">
+                            <TableCell colSpan={7} className="text-center">
                             Loading personnel...
                             </TableCell>
                         </TableRow>
                         )}
                         {!isLoadingPersonnel && !personnel?.length ? (
                         <TableRow>
-                            <TableCell colSpan={6} className="text-center">
+                            <TableCell colSpan={7} className="text-center">
                             No personnel found. Get started by adding one.
                             </TableCell>
                         </TableRow>
@@ -387,6 +413,7 @@ export default function PersonnelSettingsPage() {
                             <TableCell>{p.role}</TableCell>
                             <TableCell>{p.level}</TableCell>
                             <TableCell>{p.clearanceLevel}</TableCell>
+                            <TableCell>{p.engagementType}</TableCell>
                             <TableCell className="text-right">
                                 ${p.standardRate.toFixed(2)}
                             </TableCell>
@@ -411,7 +438,6 @@ export default function PersonnelSettingsPage() {
                 schema={roleSchema}
                 collectionName="roles"
                 formTitle="Role"
-                formDescription="Add a new job role."
                 formLabel="Role Name"
              />
           </TabsContent>
@@ -422,7 +448,6 @@ export default function PersonnelSettingsPage() {
                 schema={levelSchema}
                 collectionName="levels"
                 formTitle="Level"
-                formDescription="Add a new job level."
                 formLabel="Level Name"
              />
           </TabsContent>
@@ -430,5 +455,3 @@ export default function PersonnelSettingsPage() {
     </div>
   );
 }
-
-    
