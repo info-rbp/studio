@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { PlusCircle, MoreHorizontal } from 'lucide-react';
+import { PlusCircle, Trash2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -39,149 +39,140 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { useCollection, useFirestore, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { useCollection, useFirestore, useMemoFirebase, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs';
 
-// Zod schema for the G&A cost form
-const gaCostSchema = z.object({
+
+const gaAccountSchema = z.object({
   name: z.string().min(1, 'Name is required.'),
-  value: z.coerce.number().min(0, 'Value must be a positive number.'),
 });
 
-type GACostFormData = z.infer<typeof gaCostSchema>;
+type GAAccountFormData = z.infer<typeof gaAccountSchema>;
 
-export default function GaCostsSettingsPage() {
-  const [isGaCostDialogOpen, setIsGaCostDialogOpen] = useState(false);
+// G&A Accounts Management Component
+function GACostAccountsManager() {
+  const [isOpen, setIsOpen] = useState(false);
   const firestore = useFirestore();
-
-  // G&A Cost data
-  const gaCostCollectionRef = useMemoFirebase(
-    () => (firestore ? collection(firestore, 'workspaces/jl2g/ga_costs') : null),
+  const collectionRef = useMemoFirebase(
+    () => (firestore ? collection(firestore, `workspaces/jl2g/ga_costs`) : null),
     [firestore]
   );
-  const { data: gaCosts, isLoading: isLoadingGACosts } = useCollection<GACostFormData>(gaCostCollectionRef);
+  const { data: items, isLoading } = useCollection(collectionRef);
 
-  const gaCostForm = useForm<GACostFormData>({
-    resolver: zodResolver(gaCostSchema),
-    defaultValues: {
-      name: '',
-      value: 0,
-    },
+  const form = useForm<GAAccountFormData>({
+    resolver: zodResolver(gaAccountSchema),
+    defaultValues: { name: '' },
   });
 
-  const onGACostSubmit = (data: GACostFormData) => {
-    if (!gaCostCollectionRef) return;
-    addDocumentNonBlocking(gaCostCollectionRef, data);
-    gaCostForm.reset();
-    setIsGaCostDialogOpen(false);
+  const onSubmit = (data: GAAccountFormData) => {
+    if (!collectionRef) return;
+    addDocumentNonBlocking(collectionRef, data);
+    form.reset();
+    setIsOpen(false);
   };
+  
+  const handleDelete = (id: string) => {
+    if(!firestore) return;
+    const docRef = doc(firestore, `workspaces/jl2g/ga_costs`, id);
+    deleteDocumentNonBlocking(docRef);
+  }
 
   return (
-    <div className="flex flex-1 flex-col gap-4">
-        <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold">Manage G&amp;A Costs</h1>
-            <Dialog open={isGaCostDialogOpen} onOpenChange={setIsGaCostDialogOpen}>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex justify-between items-center">
+          <span>G&amp;A Accounts List</span>
+            <Dialog open={isOpen} onOpenChange={setIsOpen}>
               <DialogTrigger asChild>
                 <Button size="sm" className="gap-1">
                   <PlusCircle className="h-3.5 w-3.5" />
                   <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                    Add G&amp;A Cost
+                    Add G&amp;A Account
                   </span>
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Add New G&amp;A Cost</DialogTitle>
+                  <DialogTitle>Add New G&amp;A Account</DialogTitle>
                 </DialogHeader>
-                <Form {...gaCostForm}>
-                  <form onSubmit={gaCostForm.handleSubmit(onGACostSubmit)} className="space-y-4">
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                     <FormField
-                      control={gaCostForm.control}
+                      control={form.control}
                       name="name"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Name</FormLabel>
+                          <FormLabel>Account Name</FormLabel>
                           <FormControl>
-                            <Input placeholder="e.g., Corporate Overhead" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={gaCostForm.control}
-                      name="value"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Value (%)</FormLabel>
-                          <FormControl>
-                            <Input type="number" {...field} />
+                            <Input placeholder="e.g. Accounting" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                     <DialogFooter>
-                      <Button type="button" variant="outline" onClick={() => setIsGaCostDialogOpen(false)}>
+                      <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
                         Cancel
                       </Button>
-                      <Button type="submit">Save G&amp;A Cost</Button>
+                      <Button type="submit">Save</Button>
                     </DialogFooter>
                   </form>
                 </Form>
               </DialogContent>
             </Dialog>
-        </div>
-        <Card>
-          <CardHeader>
-            <CardTitle>G&amp;A Costs List</CardTitle>
-            <CardDescription>
-                Manage General and Administrative cost structures.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead className="text-right">Value (%)</TableHead>
-                  <TableHead>
-                    <span className="sr-only">Actions</span>
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoadingGACosts && (
-                  <TableRow>
-                    <TableCell colSpan={3} className="text-center">
-                      Loading G&amp;A costs...
-                    </TableCell>
-                  </TableRow>
-                )}
-                {!isLoadingGACosts && !gaCosts?.length ? (
-                  <TableRow>
-                    <TableCell colSpan={3} className="text-center">
-                      No G&amp;A costs found.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  gaCosts?.map((cost) => (
-                    <TableRow key={cost.id}>
-                      <TableCell className="font-medium">{cost.name}</TableCell>
-                      <TableCell className="text-right">{cost.value.toFixed(2)}%</TableCell>
-                      <TableCell>
-                        <Button aria-haspopup="true" size="icon" variant="ghost" disabled>
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Toggle menu</span>
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+        </CardTitle>
+         <CardDescription>
+            Manage the G&amp;A accounts used for cost allocation.
+          </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading && <TableRow><TableCell colSpan={2} className="text-center">Loading...</TableCell></TableRow>}
+            {!isLoading && !items?.length && <TableRow><TableCell colSpan={2} className="text-center">No accounts found.</TableCell></TableRow>}
+            {items?.map((item) => (
+              <TableRow key={item.id}>
+                <TableCell className="font-medium">{item.name}</TableCell>
+                <TableCell className="text-right">
+                  <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
+
+export default function FinancialManagementPage() {
+  return (
+    <div className="flex flex-1 flex-col gap-4">
+        <h1 className="text-2xl font-bold">Financial Management</h1>
+         <Tabs defaultValue="ga-accounts">
+            <TabsList>
+                <TabsTrigger value="ga-accounts">G&amp;A Accounts</TabsTrigger>
+                <TabsTrigger value="general-settings" disabled>General Settings (soon)</TabsTrigger>
+                <TabsTrigger value="ga-allocation" disabled>G&amp;A Allocation (soon)</TabsTrigger>
+            </TabsList>
+            <TabsContent value="ga-accounts" className="mt-4">
+                <GACostAccountsManager />
+            </TabsContent>
+        </Tabs>
     </div>
   );
 }
