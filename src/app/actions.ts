@@ -86,6 +86,12 @@ export async function createUser(userData: NewUserFormData) {
         isAnonymous: false,
       });
   
+      if (userData.accessLevel === 'Admin') {
+        await firestore().collection('adminUsers').doc(userRecord.uid).set({
+            isAdmin: true,
+        });
+      }
+
       return { success: true, data: { uid: userRecord.uid } };
     } catch (error: any) {
       console.error('User creation failed:', error);
@@ -115,10 +121,65 @@ export async function deleteUser(uidToDelete: string) {
   
       await auth().deleteUser(uidToDelete);
       await userDocRef.delete();
+      
+      const adminUserDocRef = firestore().collection('adminUsers').doc(uidToDelete);
+      if ((await adminUserDocRef.get()).exists) {
+        await adminUserDocRef.delete();
+      }
   
       return { success: true };
     } catch (error: any) {
       console.error('User deletion failed:', error);
       return { success: false, error: error.message || 'Failed to delete user.' };
+    }
+}
+
+export async function seedInitialUser() {
+    try {
+        getAdminApp();
+        const email = "info@remotebusinesspartner.com.au";
+        let userRecord;
+        try {
+            userRecord = await auth().getUserByEmail(email);
+        } catch (error: any) {
+            if (error.code === 'auth/user-not-found') {
+                userRecord = await auth().createUser({
+                    email: email,
+                    password: "Foxtrot19!",
+                    displayName: "Gianpaulo Coletti"
+                });
+                console.log("Successfully created protected user in Auth.");
+            } else {
+                throw error; // Re-throw other errors
+            }
+        }
+
+        const protectedUid = userRecord.uid;
+        const userDocRef = firestore().collection('users').doc(protectedUid);
+        const adminUserDocRef = firestore().collection('adminUsers').doc(protectedUid);
+
+        if (!(await userDocRef.get()).exists) {
+            await userDocRef.set({
+                id: protectedUid,
+                fullName: "Gianpaulo Coletti",
+                email: email,
+                accessLevel: "Admin",
+                isDeletable: false,
+                createdAt: new Date(),
+                isAnonymous: false,
+            });
+            console.log("Successfully created protected user in Firestore.");
+        }
+        
+        if (!(await adminUserDocRef.get()).exists) {
+            await adminUserDocRef.set({ isAdmin: true });
+            console.log("Successfully created admin entry for protected user.");
+        }
+
+        return { success: true };
+    } catch (error: any) {
+        console.error("Error seeding protected user:", error);
+        // Don't expose detailed error to client
+        return { success: false, error: "Failed to seed initial user." };
     }
 }

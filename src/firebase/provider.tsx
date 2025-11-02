@@ -5,6 +5,7 @@ import { FirebaseApp } from 'firebase/app';
 import { Firestore, doc, setDoc, getDoc } from 'firebase/firestore';
 import { Auth, User, onAuthStateChanged } from 'firebase/auth';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener'
+import { seedInitialUser } from '@/app/actions';
 
 interface FirebaseProviderProps {
   children: ReactNode;
@@ -66,6 +67,21 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     isUserLoading: true, // Start loading until first auth event
     userError: null,
   });
+
+  // Effect to seed the initial admin user.
+  useEffect(() => {
+    // This should only run on the server during build or initial render in dev
+    // It's a server action so it won't be bundled to the client
+    if (typeof window === 'undefined') {
+        seedInitialUser().then(result => {
+            if (result.success) {
+                console.log('Initial user seed check complete.');
+            } else {
+                console.error('Initial user seed failed:', result.error);
+            }
+        });
+    }
+  }, []);
 
   // Effect to subscribe to Firebase auth state changes
   useEffect(() => {
