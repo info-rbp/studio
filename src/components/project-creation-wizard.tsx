@@ -300,7 +300,7 @@ export function ProjectCreationWizard() {
                         {Object.entries(form.getValues()).map(([key, value]) => (
                             <div key={key} className="flex justify-between border-b pb-2">
                                 <span className="font-medium text-muted-foreground capitalize">{key.replace(/([A-Z])/g, ' $1')}</span>
-                                <span className="text-right font-semibold">{value instanceof Date ? format(value, 'PPP') : value.toString()}</span>
+                                <span className="text-right font-semibold">{value instanceof Date ? format(value, 'PPP') : (value?.toString() ?? '')}</span>
                             </div>
                         ))}
                     </div>
