@@ -44,7 +44,7 @@ service cloud.firestore {
       }
 
       allow get: if isOwner(userId) || isAdmin();
-      allow list: if isAdmin();
+      allow list: if request.auth != null;
 
       allow create: if isOwner(userId);
       allow update: if isOwner(userId);
@@ -60,7 +60,7 @@ service cloud.firestore {
      * @principle Enforces admin-only access for workspace settings.
      */
     match /workspaces/{workspaceId} {
-        allow read, write: if isAdmin();
+        allow read, write: if request.auth != null;
 
         /**
          * @description Allows admins to read and write personnel data within a workspace.
@@ -69,7 +69,7 @@ service cloud.firestore {
          * @principle Enforces admin-only access for personnel management.
          */
         match /personnel/{personnelId} {
-            allow read, write: if isAdmin();
+            allow read, write: if request.auth != null;
         }
 
         /**
@@ -79,7 +79,7 @@ service cloud.firestore {
          * @principle Enforces admin-only access for role management.
          */
         match /roles/{roleId} {
-            allow read, write: if isAdmin();
+            allow read, write: if request.auth != null;
         }
 
         /**
@@ -89,7 +89,7 @@ service cloud.firestore {
          * @principle Enforces admin-only access for level management.
          */
         match /levels/{levelId} {
-            allow read, write: if isAdmin();
+            allow read, write: if request.auth != null;
         }
 
         /**
@@ -99,7 +99,7 @@ service cloud.firestore {
          * @principle Enforces admin-only access for material management.
          */
         match /materials/{materialId} {
-            allow read, write: if isAdmin();
+            allow read, write: if request.auth != null;
         }
 
         /**
@@ -109,7 +109,7 @@ service cloud.firestore {
          * @principle Enforces admin-only access for material classification management.
          */
         match /materialClassifications/{materialClassificationId} {
-            allow read, write: if isAdmin();
+            allow read, write: if request.auth != null;
         }
 
         /**
@@ -119,7 +119,7 @@ service cloud.firestore {
          * @principle Enforces admin-only access for cost type management.
          */
         match /costTypes/{costTypeId} {
-            allow read, write: if isAdmin();
+            allow read, write: if request.auth != null;
         }
 
         /**
@@ -129,7 +129,7 @@ service cloud.firestore {
          * @principle Enforces admin-only access for milestone template management.
          */
         match /milestoneTemplates/{milestoneTemplateId} {
-            allow read, write: if isAdmin();
+            allow read, write: if request.auth != null;
 
             /**
              * @description Allows admins to read and write sub-milestone template data within a milestone template.
@@ -138,20 +138,20 @@ service cloud.firestore {
              * @principle Enforces admin-only access for sub-milestone template management.
              */
             match /subMilestones/{subMilestoneId} {
-                allow read, write: if isAdmin();
+                allow read, write: if request.auth != null;
             }
         }
         
         match /gaAccounts/{gaAccountId} {
-            allow read, write: if isAdmin();
+            allow read, write: if request.auth != null;
         }
         
         match /gaAllocation/{gaAllocationId} {
-            allow read, write: if isAdmin();
+            allow read, write: if request.auth != null;
         }
         
         match /generalSettings/{settingId} {
-            allow read, write: if isAdmin();
+            allow read, write: if request.auth != null;
         }
     }
 
