@@ -148,9 +148,8 @@ export async function seedInitialUser() {
                     password: "Foxtrot19!",
                     displayName: "Gianpaulo Coletti"
                 });
-                console.log("Successfully created protected user in Auth.");
             } else {
-                throw error; // Re-throw other errors
+                throw error;
             }
         }
 
@@ -168,18 +167,15 @@ export async function seedInitialUser() {
                 createdAt: new Date(),
                 isAnonymous: false,
             });
-            console.log("Successfully created protected user in Firestore.");
         }
         
         if (!(await adminUserDocRef.get()).exists) {
             await adminUserDocRef.set({ isAdmin: true });
-            console.log("Successfully created admin entry for protected user.");
         }
 
         return { success: true };
     } catch (error: any) {
         console.error("Error seeding protected user:", error);
-        // Don't expose detailed error to client
         return { success: false, error: "Failed to seed initial user." };
     }
 }

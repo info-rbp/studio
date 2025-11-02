@@ -76,17 +76,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     userError: null,
   });
 
-  // Effect to seed the initial admin user.
-  useEffect(() => {
-    seedInitialUser().then(result => {
-        if (result.success) {
-            console.log('Initial user seed check complete.');
-        } else {
-            console.error('Initial user seed failed:', result.error);
-        }
-    });
-  }, []);
-
   // Effect to subscribe to Firebase auth state changes
   useEffect(() => {
     if (!auth) { // If no Auth service instance, cannot determine user state
