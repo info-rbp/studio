@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -21,58 +21,19 @@ import {
   AvatarImage,
 } from '@/components/ui/avatar';
 import { Icons } from '@/components/icons';
-import { LayoutDashboard, Settings, BookOpen, Loader2 } from 'lucide-react';
-import { useUser, useAuth } from '@/firebase';
-import { signInAnonymously } from 'firebase/auth';
+import { LayoutDashboard, Settings, BookOpen } from 'lucide-react';
+import { useUser } from '@/firebase';
 
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const auth = useAuth();
-  const { user, userProfile, isUserLoading } = useUser();
-  const [isSigningIn, setIsSigningIn] = useState(true);
-
-  useEffect(() => {
-    // This effect manages the anonymous sign-in flow.
-    if (isUserLoading) {
-      // If the user hook is still loading, we are effectively in a "signing in" state.
-      setIsSigningIn(true);
-      return;
-    }
-    
-    if (!user) {
-      // If loading is finished and there's still no user, trigger anonymous sign-in.
-      console.log("No user found. Signing in anonymously...");
-      signInAnonymously(auth).catch((error) => {
-        console.error("Critical: Anonymous sign-in failed:", error);
-        // In a real app, you might want to show a persistent error screen here.
-        setIsSigningIn(false); // Stop loading even on error to prevent infinite loop.
-      });
-      // The onAuthStateChanged listener within the useUser hook will handle the state update
-      // once sign-in is successful, which will cause this effect to re-run.
-    } else {
-      // If we have a user, the sign-in process is complete.
-      console.log("User is authenticated:", user.uid);
-      setIsSigningIn(false);
-    }
-  }, [user, isUserLoading, auth]);
-
+  const { userProfile } = useUser();
 
   const getInitials = (name = '') => {
     if (!name) return 'A';
     return name.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase();
   };
   
-  // Render a full-screen loader while the initial sign-in/auth check is happening.
-  // This prevents any child components from rendering before a user is available.
-  if (isSigningIn) {
-    return (
-        <div className="flex h-screen w-full items-center justify-center bg-background">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        </div>
-      );
-  }
-
   return (
     <SidebarProvider>
       <Sidebar>
