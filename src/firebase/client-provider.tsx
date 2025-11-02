@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, type ReactNode, useState, useEffect } from 'react';
+import React, { useState, useEffect, ReactNode } from 'react';
 import { FirebaseProvider } from '@/firebase/provider';
 import { initializeFirebase } from '@/firebase';
 import { getAuth, onAuthStateChanged, signInAnonymously } from 'firebase/auth';
@@ -17,6 +17,7 @@ export function FirebaseClientProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         // User is signed in (either normally or anonymously).
+        // Authentication is complete.
         setIsLoading(false);
       } else {
         // No user is signed in. Attempt to sign in anonymously.
@@ -26,7 +27,8 @@ export function FirebaseClientProvider({ children }: { children: ReactNode }) {
           // at which point isLoading will be set to false.
         } catch (error) {
           console.error("Critical: Anonymous sign-in failed:", error);
-          // Handle critical error, maybe show an error screen
+          // If sign-in fails, we stop loading but the app will be in a broken state.
+          // This is a critical failure.
           setIsLoading(false);
         }
       }
