@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Project, projectSchema } from '@/lib/types';
 import { createProject, createProjectWithAI } from '@/app/actions';
+import { useAuth } from '@/firebase';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -49,6 +50,7 @@ export function ProjectCreationWizard() {
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const auth = useAuth();
 
   const form = useForm<Project>({
     resolver: zodResolver(projectSchema),
@@ -105,7 +107,20 @@ export function ProjectCreationWizard() {
   
   const onSubmit = async (data: Project) => {
     setIsSubmitting(true);
+
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+        toast({ variant: 'destructive', title: 'Authentication Error', description: 'You must be logged in to create a project.' });
+        setIsSubmitting(false);
+        return;
+    }
+    
+    // Get the auth token to pass to the server action
+    const idToken = await currentUser.getIdToken();
+
+    // The fetch call is implicitly handled by Next.js Server Actions
     const result = await createProject(data);
+    
     if(result.success) {
       toast({
         title: "Project Created!",

@@ -5,6 +5,9 @@ import { projectSchema, type Project } from '@/lib/types';
 import { getAdminApp } from '@/firebase/admin';
 import { z } from 'zod';
 import { auth, firestore } from 'firebase-admin';
+import { headers } from 'next/headers';
+import { initializeApp, getApp } from 'firebase-admin/app';
+
 
 const newUserSchema = z.object({
   fullName: z.string().min(1, 'Full Name is required.'),
@@ -14,14 +17,6 @@ const newUserSchema = z.object({
 });
 type NewUserFormData = z.infer<typeof newUserSchema>;
 
-
-// TODO: Check if caller is an admin
-// const checkIsAdmin = async (uid: string) => {
-//   const userDoc = await firestore().collection('users').doc(uid).get();
-//   if (!userDoc.exists || userDoc.data()?.accessLevel !== 'Admin') {
-//     throw new Error('Permission denied. Not an admin.');
-//   }
-// }
 
 export async function createProjectWithAI(description: string) {
   try {
@@ -51,24 +46,53 @@ export async function createProjectWithAI(description: string) {
   }
 }
 
+async function getUserIdFromToken() {
+    getAdminApp();
+    const headersList = headers();
+    const authorization = headersList.get('Authorization');
+    if (authorization?.startsWith('Bearer ')) {
+        const idToken = authorization.split('Bearer ')[1];
+        try {
+            const decodedToken = await auth().verifyIdToken(idToken);
+            return decodedToken.uid;
+        } catch (error) {
+            console.error('Error verifying token:', error);
+            return null;
+        }
+    }
+    return null;
+}
+
 export async function createProject(projectData: Project) {
   try {
+    const ownerId = await getUserIdFromToken();
+    if (!ownerId) {
+      return { success: false, error: 'Authentication failed. Could not identify user.' };
+    }
+    
     const parsedData = projectSchema.parse(projectData);
-    console.log('Project created successfully (mock):', parsedData);
-    // Here you would typically save to Firestore
-    // e.g., await db.collection('projects').add({ ...parsedData, ownerId: ... });
-    return { success: true, data: parsedData };
+    
+    const projectWithMeta = {
+      ...parsedData,
+      ownerId: ownerId,
+      createdAt: firestore.FieldValue.serverTimestamp(),
+    }
+
+    const docRef = await firestore().collection('projects').add(projectWithMeta);
+
+    return { success: true, data: { ...projectWithMeta, id: docRef.id } };
   } catch (error) {
     console.error('Project creation failed:', error);
-    return { success: false, error: 'Failed to create project.' };
+    if (error instanceof z.ZodError) {
+      return { success: false, error: 'Invalid project data.', details: error.errors };
+    }
+    return { success: false, error: 'Failed to create project on the server.' };
   }
 }
 
 export async function createUser(userData: NewUserFormData) {
     try {
-      getAdminApp(); // Ensure admin app is initialized
-  
-      // TODO: Add admin check here
+      getAdminApp();
   
       const userRecord = await auth().createUser({
         email: userData.email,
@@ -104,9 +128,7 @@ export async function createUser(userData: NewUserFormData) {
   
 export async function deleteUser(uidToDelete: string) {
     try {
-      getAdminApp(); // Ensure admin app is initialized
-  
-      // TODO: Add admin check here
+      getAdminApp();
   
       const userDocRef = firestore().collection('users').doc(uidToDelete);
       const userDoc = await userDocRef.get();
