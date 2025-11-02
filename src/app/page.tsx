@@ -14,7 +14,6 @@ export default function HomePage() {
       if (user) {
         router.push('/dashboard');
       } else {
-        // Instead of anonymous sign-in, redirect to a login page
         router.push('/login');
       }
     }

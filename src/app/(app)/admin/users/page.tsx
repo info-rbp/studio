@@ -16,7 +16,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Switch } from '@/components/ui/switch';
-import { useCollection, useDoc, useFirestore, useMemoFirebase, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { useCollection, useDoc, useFirestore, useMemoFirebase, setDocumentNonBlocking, deleteDocumentNonBlocking, useAuth, updateDocumentNonBlocking } from '@/firebase';
 import { collection, doc, serverTimestamp } from 'firebase/firestore';
 import { WithId } from '@/firebase/firestore/use-collection';
 
@@ -32,6 +32,7 @@ interface AdminUser {
 
 function UserRow({ user }: { user: WithId<User> }) {
   const firestore = useFirestore();
+  const auth = useAuth();
   
   const adminUserRef = useMemoFirebase(
     () => (firestore ? doc(firestore, `adminUsers/${user.id}`) : null),
@@ -45,7 +46,7 @@ function UserRow({ user }: { user: WithId<User> }) {
     if (isAdmin) {
       setDocumentNonBlocking(adminUserRef, { isAdmin: true }, { merge: true });
     } else {
-      deleteDocumentNonBlocking(adminUserf);
+      deleteDocumentNonBlocking(adminUserRef);
     }
   };
   

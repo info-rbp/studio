@@ -10,6 +10,11 @@
           "type": "string",
           "description": "Unique identifier for the user entity (Firebase UID)."
         },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "The user's email address."
+        },
         "createdAt": {
           "type": "string",
           "description": "Timestamp indicating when the user account was created.",
@@ -526,8 +531,7 @@
   },
   "auth": {
     "providers": [
-      "password",
-      "anonymous"
+      "password"
     ]
   },
   "firestore": {
@@ -841,6 +845,6 @@
         }
       }
     ],
-    "reasoning": "The Firestore data structure is designed to support the JL2G Costing Platform's requirements for secure, scalable, and maintainable data management, emphasizing Authorization Independence. The core principle revolves around avoiding hierarchical authorization dependencies to ensure atomic operations and simplified security rules. This is achieved through denormalization, where relevant authorization context is copied into subcollections. For the initial build with anonymous authentication, the structure focuses on user-owned projects and admin-managed settings.\n\n**Authorization Independence (Denormalization):**\n*   `Projects` subcollections (`milestones`, `laborItems`, `materialItems`) do NOT inherit authorization from the `Workspace`. Instead, the `ownerId` field is present in the project document, enabling direct authorization based on `request.auth.uid` without requiring `get()` calls to parent documents.\n\n**Structural Segregation (Homogeneous Security Posture):**\n*   `Projects` are stored separately from `Workspaces`, ensuring that project data (user-specific) and settings data (admin-managed) have distinct security requirements. This prevents mixing data with different access needs in the same collection.\n\n**Access Modeling (Standardization and Consistency):**\n*   **Private Data:** The `/users/{userId}/` collection uses Path-Based ownership for user profiles.\n*   **Hierarchical Paths for User-Owned Data:** The `/projects/{projectId}` collection is owned by users.\n\n**QAPs (Rules are not Filters):**\n*   The structure supports secure `list` operations by ensuring that collections only contain documents with consistent security requirements. For example, listing projects is secure because each project document contains the `ownerId`, enabling filtering based on `request.auth.uid`.\n\n**Workspace-Centric Settings:**\n*   Workspace (`workspaces/jl2g`) contains subcollections like `personnel`, `materials`, and `milestoneTemplates` for admin-managed settings. This centralized approach simplifies management and ensures consistency across projects.\n\nThe `adminUsers` collection supports role-based access control (DBAC) via existence checks, simplifying admin privilege verification in security rules.\n\nThis structure facilitates simple, robust, and easily debuggable Firestore Security Rules, aligning with the core design principles and strategy mandates."
+    "reasoning": "The Firestore data structure is designed to support the JL2G Costing Platform's requirements for secure, scalable, and maintainable data management, emphasizing Authorization Independence. The core principle revolves around avoiding hierarchical authorization dependencies to ensure atomic operations and simplified security rules. This is achieved through denormalization, where relevant authorization context is copied into subcollections. For the initial build with anonymous authentication, the structure focuses on user-owned projects and admin-managed settings.\n\n**Authorization Independence (Denormalization):**\n*   `Projects` subcollections (`milestones`, `laborItems`, `materialItems`) do NOT inherit authorization from the `Workspace`. Instead, the `ownerId` field is present in the project document, enabling direct authorization based on `request.auth.uid` without requiring `get()` calls to parent documents.\n\n**Structural Segregation (Homogeneous Security Posture):**\n*   `Projects` are stored separately from `Workspaces`, ensuring that project data (user-specific) and settings data (admin-managed) have distinct security requirements. This prevents mixing data with different access needs in the same collection.\n\n**Access Modeling (Standardization and Consistency):**\n*   **Private Data:** The `/users/{userId}` collection uses Path-Based ownership for user profiles.\n*   **Hierarchical Paths for User-Owned Data:** The `/projects/{projectId}` collection is owned by users.\n\n**QAPs (Rules are not Filters):**\n*   The structure supports secure `list` operations by ensuring that collections only contain documents with consistent security requirements. For example, listing projects is secure because each project document contains the `ownerId`, enabling filtering based on `request.auth.uid`.\n\n**Workspace-Centric Settings:**\n*   Workspace (`workspaces/jl2g`) contains subcollections like `personnel`, `materials`, and `milestoneTemplates` for admin-managed settings. This centralized approach simplifies management and ensures consistency across projects.\n\nThe `adminUsers` collection supports role-based access control (DBAC) via existence checks, simplifying admin privilege verification in security rules.\n\nThis structure facilitates simple, robust, and easily debuggable Firestore Security Rules, aligning with the core design principles and strategy mandates."
   }
 }
