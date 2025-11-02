@@ -37,9 +37,11 @@ export function getSdks(firebaseApp: FirebaseApp) {
   const firestore = getFirestore(firebaseApp);
   if (process.env.NODE_ENV === 'development') {
     try {
-        connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
-        connectFirestoreEmulator(firestore, '127.0.0.1', 9098);
-    } catch (e) {}
+        connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
+        connectFirestoreEmulator(firestore, 'localhost', 9098);
+    } catch (e) {
+      // It's okay if emulators aren't running. We'll just connect to production.
+    }
   }
   return {
     firebaseApp,
