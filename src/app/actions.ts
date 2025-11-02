@@ -6,7 +6,6 @@ import { getAdminApp } from '@/firebase/admin';
 import { z } from 'zod';
 import { auth, firestore } from 'firebase-admin';
 import { headers } from 'next/headers';
-import { initializeApp, getApp } from 'firebase-admin/app';
 
 
 const newUserSchema = z.object({
