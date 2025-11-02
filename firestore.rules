@@ -1,250 +1,54 @@
-/**
- * @fileoverview Firestore Security Rules for the JL2G Costing Platform.
- *
- * Core Philosophy:
- * This ruleset enforces a strict user-ownership model for projects and admin-only access for workspace settings. Authorization decisions are based on the authenticated user's UID and the presence of an `ownerId` field on project documents. Workspace settings are only editable by users who are designated administrators. The rules are written to be as restrictive as possible while allowing the application to function correctly.
- *
- * Data Structure:
- * - /users/{userId}: Stores user profile information, accessible only to the user themselves.
- * - /workspaces/{workspaceId}: Stores workspace settings, accessible only to admins.  Only one workspace document is expected ('jl2g').
- * - /projects/{projectId}: Stores project data, owned by a specific user (ownerId field).
- * - /projects/{projectId}/milestones/{milestoneId}: Stores milestones associated with a project, accessible only to the project owner.
- * - /projects/{projectId}/laborItems/{laborItemId}: Stores labor items associated with a project, accessible only to the project owner.
- * - /projects/{projectId}/materialItems/{materialItemId}: Stores material items associated with a project, accessible only to the project owner.
- * - /adminUsers/{adminUserId}: Stores a list of admin users. The existence of a document indicates admin privileges.
- *
- * Key Security Decisions:
- * - Users can only access their own profile data in `/users/{userId}`.
- * - Only designated admins can create, update, or delete workspace settings.
- * - Projects are owned by a specific user, who has full access to the project and its subcollections.
- * - Listing of users is only permitted for admins. Listing admin users is explicitly denied.
- *
- * Denormalization for Authorization:
- * The `Project` entity contains the `ownerId` field, which is used to determine project ownership. This avoids the need for complex queries or joins to determine if a user has access to a project.
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Check if a user is an Admin by looking in a separate 'adminUsers' collection
     function isAdmin() {
       return exists(/databases/$(database)/documents/adminUsers/$(request.auth.uid));
     }
 
-    /**
-     * @description Allows users to read and write their own user profile data.
-     * @path /users/{userId}
-     * @allow (create, update, delete, get) if request.auth.uid == userId
-     * @allow (list) if isAdmin()
-     * @deny (list) if !isAdmin()
-     * @principle Enforces document ownership for individual operations and admin-only for list operations.
-     */
-    match /users/{userId} {
-      function isOwner(userId) {
-        return request.auth.uid == userId;
-      }
-
-      allow get: if isOwner(userId) || isAdmin();
-      allow list: if request.auth != null;
-
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
-      allow delete: if isOwner(userId) && resource != null;
+    // Users Collection
+    match /users/{uid} {
+      // A new user (via the Cloud Function) can be created.
+      // A user can update their OWN profile (e.g., to add their name later)
+      allow create, update: if request.auth.uid == uid;
+      // Only Admins can see the full user list (for the User Management page)
+      // and a user can see their own profile
+      allow get: if request.auth.uid == uid || isAdmin();
+      allow list: if isAdmin();
+      allow delete: if isAdmin();
     }
 
-    /**
-     * @description Allows admins to read and write workspace settings.
-     * @path /workspaces/{workspaceId}
-     * @allow (get, list) if isAdmin()
-     * @allow (create, update, delete) if isAdmin()
-     * @deny (get, list, create, update, delete) if !isAdmin()
-     * @principle Enforces admin-only access for workspace settings.
-     */
-    match /workspaces/{workspaceId} {
-        allow read, write: if request.auth != null;
-
-        /**
-         * @description Allows admins to read and write personnel data within a workspace.
-         * @path /workspaces/{workspaceId}/personnel/{personnelId}
-         * @allow (get, list, create, update, delete) if isAdmin()
-         * @principle Enforces admin-only access for personnel management.
-         */
-        match /personnel/{personnelId} {
-            allow read, write: if request.auth != null;
-        }
-
-        /**
-         * @description Allows admins to read and write role data within a workspace.
-         * @path /workspaces/{workspaceId}/roles/{roleId}
-         * @allow (get, list, create, update, delete) if isAdmin()
-         * @principle Enforces admin-only access for role management.
-         */
-        match /roles/{roleId} {
-            allow read, write: if request.auth != null;
-        }
-
-        /**
-         * @description Allows admins to read and write level data within a workspace.
-         * @path /workspaces/{workspaceId}/levels/{levelId}
-         * @allow (get, list, create, update, delete) if isAdmin()
-         * @principle Enforces admin-only access for level management.
-         */
-        match /levels/{levelId} {
-            allow read, write: if request.auth != null;
-        }
-
-        /**
-         * @description Allows admins to read and write material data within a workspace.
-         * @path /workspaces/{workspaceId}/materials/{materialId}
-         * @allow (get, list, create, update, delete) if isAdmin()
-         * @principle Enforces admin-only access for material management.
-         */
-        match /materials/{materialId} {
-            allow read, write: if request.auth != null;
-        }
-
-        /**
-         * @description Allows admins to read and write material classification data within a workspace.
-         * @path /workspaces/{workspaceId}/materialClassifications/{materialClassificationId}
-         * @allow (get, list, create, update, delete) if isAdmin()
-         * @principle Enforces admin-only access for material classification management.
-         */
-        match /materialClassifications/{materialClassificationId} {
-            allow read, write: if request.auth != null;
-        }
-
-        /**
-         * @description Allows admins to read and write cost type data within a workspace.
-         * @path /workspaces/{workspaceId}/costTypes/{costTypeId}
-         * @allow (get, list, create, update, delete) if isAdmin()
-         * @principle Enforces admin-only access for cost type management.
-         */
-        match /costTypes/{costTypeId} {
-            allow read, write: if request.auth != null;
-        }
-
-        /**
-         * @description Allows admins to read and write milestone template data within a workspace.
-         * @path /workspaces/{workspaceId}/milestoneTemplates/{milestoneTemplateId}
-         * @allow (get, list, create, update, delete) if isAdmin()
-         * @principle Enforces admin-only access for milestone template management.
-         */
-        match /milestoneTemplates/{milestoneTemplateId} {
-            allow read, write: if request.auth != null;
-
-            /**
-             * @description Allows admins to read and write sub-milestone template data within a milestone template.
-             * @path /workspaces/{workspaceId}/milestoneTemplates/{milestoneTemplateId}/subMilestones/{subMilestoneId}
-             * @allow (get, list, create, update, delete) if isAdmin()
-             * @principle Enforces admin-only access for sub-milestone template management.
-             */
-            match /subMilestones/{subMilestoneId} {
-                allow read, write: if request.auth != null;
-            }
-        }
-        
-        match /gaAccounts/{gaAccountId} {
-            allow read, write: if request.auth != null;
-        }
-        
-        match /gaAllocation/{gaAllocationId} {
-            allow read, write: if request.auth != null;
-        }
-        
-        match /generalSettings/{settingId} {
-            allow read, write: if request.auth != null;
-        }
+    // AdminUsers Collection (The "Admin List")
+    match /adminUsers/{uid} {
+      // Only other Admins can read or write to the admin list
+      allow read, write, delete: if isAdmin();
     }
 
+    // Workspaces Collection (The "Settings")
+    match /workspaces/{docId=**} {
+      // Any logged-in user (i.e., everyone) can READ the settings (for dropdowns)
+      allow read: if request.auth != null;
+      // Only Admins can WRITE to the settings
+      allow write: if isAdmin();
+    }
 
-    /**
-     * @description Allows project owners to read and write their own project data.
-     * @path /projects/{projectId}
-     * @allow (create) if request.resource.data.ownerId == request.auth.uid
-     * @allow (get, list, update, delete) if resource.data.ownerId == request.auth.uid
-     * @deny (get, list, create, update, delete) if resource.data.ownerId != request.auth.uid
-     * @principle Enforces document ownership for all operations on projects.
-     */
+    // Projects Collection (The "Data")
     match /projects/{projectId} {
-      function isOwner(ownerId) {
-        return request.auth.uid == ownerId;
+      // A user can create a project IF they are the owner
+      allow create: if request.auth.uid == request.resource.data.ownerId;
+      // A user can read, update, or delete a project IF they are the owner
+      allow read, update, delete: if request.auth.uid == resource.data.ownerId;
+      // An admin can read or list projects
+      allow list, get: if isAdmin();
+
+
+      // Project Sub-collections (laborItems, materialItems, etc.)
+      match /{subCollection}/{docId} {
+        // A user can read/write items in a project IF they own the parent project
+        // Or if they are an admin
+        allow read, write: if request.auth.uid == get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId || isAdmin();
       }
-      
-      function isExistingOwner(ownerId) {
-        return isOwner(ownerId) && resource != null;
-      }
-
-      allow get, list: if isOwner(resource.data.ownerId);
-
-      allow create: if isOwner(request.resource.data.ownerId);
-      allow update: if isExistingOwner(resource.data.ownerId);
-      allow delete: if isExistingOwner(resource.data.ownerId);
-    }
-
-    /**
-     * @description Allows project owners to read and write milestones associated with their projects.
-     * @path /projects/{projectId}/milestones/{milestoneId}
-     * @allow (get, list) if get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId == request.auth.uid
-     * @allow (create, update, delete) if get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId == request.auth.uid
-     * @deny (get, list, create, update, delete) if get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId != request.auth.uid
-     * @principle Enforces document ownership for all operations on milestones.
-     */
-    match /projects/{projectId}/milestones/{milestoneId} {
-      function isProjectOwner(projectId) {
-        return get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId == request.auth.uid;
-      }
-
-      allow read, write: if isProjectOwner(projectId);
-    }
-
-    /**
-     * @description Allows project owners to read and write labor items associated with their projects.
-     * @path /projects/{projectId}/laborItems/{laborItemId}
-     * @allow (get, list) if get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId == request.auth.uid
-     * @allow (create, update, delete) if get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId == request.auth.uid
-     * @deny (get, list, create, update, delete) if get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId != request.auth.uid
-     * @principle Enforces document ownership for all operations on labor items.
-     */
-    match /projects/{projectId}/laborItems/{laborItemId} {
-      function isProjectOwner(projectId) {
-        return get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId == request.auth.uid;
-      }
-
-      allow read, write: if isProjectOwner(projectId);
-    }
-
-    /**
-     * @description Allows project owners to read and write material items associated with their projects.
-     * @path /projects/{projectId}/materialItems/{materialItemId}
-     * @allow (get, list) if get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId == request.auth.uid
-     * @allow (create, update, delete) if get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId == request.auth.uid
-     * @deny (get, list, create, update, delete) if get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId != request.auth.uid
-     * @principle Enforces document ownership for all operations on material items.
-     */
-    match /projects/{projectId}/materialItems/{materialItemId} {
-      function isProjectOwner(projectId) {
-        return get(/databases/$(database)/documents/projects/$(projectId)).data.ownerId == request.auth.uid;
-      }
-
-      allow read, write: if isProjectOwner(projectId);
-    }
-
-    /**
-     * @description Allows designated admins to read their own admin user data.
-     * @path /adminUsers/{adminUserId}
-     * @allow get if request.auth.uid == adminUserId
-     * @deny get if request.auth.uid != adminUserId
-     * @principle Enforces document ownership for reads on admin user documents.  Writes are not permitted through the rules.
-     */
-    match /adminUsers/{adminUserId} {
-      function isSelf(adminUserId) {
-        return request.auth.uid == adminUserId;
-      }
-
-      allow get: if isSelf(adminUserId) || isAdmin();
-      allow list: if false;  // Listing admin users is not permitted
-
-      allow create, update, delete: if isAdmin();
     }
   }
 }
-    

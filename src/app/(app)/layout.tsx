@@ -1,8 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   SidebarProvider,
   Sidebar,
@@ -21,24 +21,49 @@ import {
   AvatarImage,
 } from '@/components/ui/avatar';
 import { Icons } from '@/components/icons';
-import { LayoutDashboard, Settings, BookOpen } from 'lucide-react';
+import { LayoutDashboard, Settings, BookOpen, Loader2 } from 'lucide-react';
+import { useUser, useAuth } from '@/firebase';
+import { signInAnonymously } from 'firebase/auth';
 
-// Mock user for development, bypassing login
-const mockUser = {
-  fullName: 'Admin User',
-  email: 'admin@example.com',
-  accessLevel: 'Admin',
-};
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const auth = useAuth();
+  const { user, userProfile, isUserLoading } = useUser();
+  const [isSigningIn, setIsSigningIn] = useState(true);
+
+  useEffect(() => {
+    if (isUserLoading) {
+        setIsSigningIn(true);
+        return;
+    }
+    if (!user) {
+      console.log("No user found. Signing in anonymously...");
+      signInAnonymously(auth).catch((error) => {
+        console.error("Error signing in anonymously:", error);
+        // Handle critical error - maybe show an error page
+        setIsSigningIn(false);
+      });
+      // The onAuthStateChanged listener in useUser will handle the user state update
+    } else {
+        console.log("User is logged in:", user.uid);
+        setIsSigningIn(false);
+    }
+  }, [user, isUserLoading, auth]);
+
 
   const getInitials = (name = '') => {
+    if (!name) return 'A';
     return name.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase();
   };
 
-  // The problematic redirect logic has been removed from here.
-  // We are now relying solely on the mockUser to simulate a logged-in state.
+  if (isSigningIn || isUserLoading) {
+    return (
+        <div className="flex h-screen w-full items-center justify-center bg-background">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+      );
+  }
 
   return (
     <SidebarProvider>
@@ -61,7 +86,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
-            {mockUser.accessLevel === 'Admin' && (
+            {userProfile?.accessLevel === 'Admin' && (
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
@@ -89,16 +114,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </SidebarContent>
         <SidebarFooter>
            <div className="flex items-center gap-3 cursor-pointer p-2 rounded-md">
-              <>
-                <Avatar className="h-8 w-8">
-                  <AvatarImage />
-                  <AvatarFallback>{getInitials(mockUser.fullName)}</AvatarFallback>
-                </Avatar>
-                <div className="flex flex-col text-sm group-data-[collapsible=icon]:hidden">
-                  <span className="font-medium text-sidebar-foreground truncate">{mockUser.fullName}</span>
-                  <span className="text-xs text-muted-foreground">{mockUser.accessLevel}</span>
-                </div>
-              </>
+              {userProfile && (
+                <>
+                    <Avatar className="h-8 w-8">
+                    <AvatarImage />
+                    <AvatarFallback>{getInitials(userProfile.fullName)}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col text-sm group-data-[collapsible=icon]:hidden">
+                    <span className="font-medium text-sidebar-foreground truncate">{userProfile.fullName}</span>
+                    <span className="text-xs text-muted-foreground">{userProfile.accessLevel}</span>
+                    </div>
+                </>
+              )}
             </div>
         </SidebarFooter>
       </Sidebar>

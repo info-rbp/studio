@@ -8,7 +8,7 @@ import { Auth, User, onAuthStateChanged } from 'firebase/auth';
 export interface UserProfile {
   id: string;
   fullName: string;
-  email: string;
+  email: string | null; // Can be null for anonymous
   accessLevel: 'Tender Lead' | 'Manager' | 'Admin';
   isDeletable: boolean;
   isAnonymous: boolean;
@@ -65,15 +65,16 @@ export const useUser = (auth: Auth, firestore: Firestore): UserAuthState => {
             // Document doesn't exist, so create it.
             const newUserProfile: UserProfile = {
               id: firebaseUser.uid,
-              fullName: firebaseUser.displayName || 'New User',
-              email: firebaseUser.email || '',
-              accessLevel: 'Tender Lead', // Default access level
+              fullName: firebaseUser.displayName || 'Anonymous User',
+              email: firebaseUser.email || null, // Will be null for anonymous
+              accessLevel: 'Tender Lead', // All new users default to base level
               isDeletable: true,
               isAnonymous: firebaseUser.isAnonymous,
               createdAt: serverTimestamp(),
             };
             try {
               await setDoc(userDocRef, newUserProfile);
+              console.log(`Created user document for anonymous user: ${firebaseUser.uid}`);
             } catch (error) {
               console.error("Failed to create user document:", error);
               setUserAuthState({ user: firebaseUser, userProfile: null, isUserLoading: false, userError: error as Error });
@@ -81,7 +82,7 @@ export const useUser = (auth: Auth, firestore: Firestore): UserAuthState => {
             }
           }
           
-          // Now set up the real-time listener
+          // Now set up the real-time listener for the profile
           const unsubscribeProfile = onSnapshot(userDocRef, 
             (docSnap) => {
               if (docSnap.exists()) {
@@ -92,7 +93,8 @@ export const useUser = (auth: Auth, firestore: Firestore): UserAuthState => {
                   userError: null 
                 });
               } else {
-                setUserAuthState({ user: firebaseUser, userProfile: null, isUserLoading: false, userError: null });
+                 // This case should be rare after the create logic above, but good to have
+                setUserAuthState({ user: firebaseUser, userProfile: null, isUserLoading: false, userError: new Error("User profile not found after creation attempt.") });
               }
             },
             (error) => {
