@@ -10,10 +10,9 @@ const getServiceAccount = () => {
     if (process.env.FIREBASE_SERVICE_ACCOUNT) {
         return JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
     }
-    // Fallback for local development if you have a service account file
-    return require('../../../serviceAccountKey.json');
+    return undefined;
   } catch (e) {
-    console.error('Service account key not found. Please set FIREBASE_SERVICE_ACCOUNT environment variable or place serviceAccountKey.json in the root directory.');
+    console.error('Could not parse FIREBASE_SERVICE_ACCOUNT environment variable.');
     return undefined;
   }
 }
@@ -27,7 +26,7 @@ export function getAdminApp(): App {
   const serviceAccount = getServiceAccount();
 
   if (!serviceAccount) {
-    throw new Error('Firebase Admin SDK service account credentials are not configured.');
+    throw new Error('Firebase Admin SDK service account credentials are not configured. Please set the FIREBASE_SERVICE_ACCOUNT environment variable.');
   }
 
   return initializeApp({
