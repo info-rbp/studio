@@ -59,7 +59,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 asChild
                 isActive={pathname.startsWith('/admin')}
               >
-                <Link href="#">
+                <Link href="/admin">
                   <Settings />
                   Admin
                 </Link>
