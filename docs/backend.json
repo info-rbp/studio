@@ -1,0 +1,622 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the JL2G Costing Platform.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user entity (Firebase UID)."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the user account was created.",
+          "format": "date-time"
+        },
+        "isAnonymous": {
+          "type": "boolean",
+          "description": "Indicates whether the user is using anonymous authentication."
+        }
+      },
+      "required": [
+        "id",
+        "createdAt",
+        "isAnonymous"
+      ]
+    },
+    "Workspace": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Workspace",
+      "type": "object",
+      "description": "Represents the central repository for shared settings and configuration data for the JL2G organization.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the workspace (e.g., 'jl2g')."
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
+    "Personnel": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Personnel",
+      "type": "object",
+      "description": "Represents an employee available for projects.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the personnel entity."
+        },
+        "workspaceId": {
+          "type": "string",
+          "description": "Reference to Workspace. (Relationship: Workspace 1:N Personnel)"
+        },
+        "name": {
+          "type": "string",
+          "description": "The employee's name."
+        },
+        "role": {
+          "type": "string",
+          "description": "The employee's role (e.g., Senior Systems Engineer)."
+        },
+        "level": {
+          "type": "string",
+          "description": "The employee's level (e.g., C6)."
+        },
+        "standardRate": {
+          "type": "number",
+          "description": "The employee's standard hourly rate."
+        },
+        "clearanceLevel": {
+          "type": "string",
+          "description": "The employee's security clearance level (e.g., NV1)."
+        }
+      },
+      "required": [
+        "id",
+        "workspaceId",
+        "name",
+        "role",
+        "level",
+        "standardRate",
+        "clearanceLevel"
+      ]
+    },
+    "Material": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Material",
+      "type": "object",
+      "description": "Represents a purchasable, non-labor item.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the material entity."
+        },
+        "workspaceId": {
+          "type": "string",
+          "description": "Reference to Workspace. (Relationship: Workspace 1:N Material)"
+        },
+        "name": {
+          "type": "string",
+          "description": "The material's name (e.g., Acrobat Pro License)."
+        },
+        "defaultUnitCost": {
+          "type": "number",
+          "description": "The material's default unit cost."
+        },
+        "costFrequency": {
+          "type": "string",
+          "description": "The frequency of the material's cost (e.g., Monthly, One-Time)."
+        }
+      },
+      "required": [
+        "id",
+        "workspaceId",
+        "name",
+        "defaultUnitCost",
+        "costFrequency"
+      ]
+    },
+    "MilestoneTemplate": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "MilestoneTemplate",
+      "type": "object",
+      "description": "Represents a preset WBS/milestone item.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the milestone template entity."
+        },
+        "workspaceId": {
+          "type": "string",
+          "description": "Reference to Workspace. (Relationship: Workspace 1:N MilestoneTemplate)"
+        },
+        "name": {
+          "type": "string",
+          "description": "The milestone template's name (e.g., Project Initiation)."
+        }
+      },
+      "required": [
+        "id",
+        "workspaceId",
+        "name"
+      ]
+    },
+    "GACost": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "GACost",
+      "type": "object",
+      "description": "Represents a G&A cost structure.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the G&A cost entity."
+        },
+        "workspaceId": {
+          "type": "string",
+          "description": "Reference to Workspace. (Relationship: Workspace 1:N GACost)"
+        },
+        "name": {
+          "type": "string",
+          "description": "The G&A cost's name."
+        },
+        "value": {
+          "type": "number",
+          "description": "The G&A cost's value."
+        }
+      },
+      "required": [
+        "id",
+        "workspaceId",
+        "name",
+        "value"
+      ]
+    },
+    "Project": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Project",
+      "type": "object",
+      "description": "Represents a tender project.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the project entity."
+        },
+        "ownerId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Project) The user ID of the project owner."
+        },
+        "projectName": {
+          "type": "string",
+          "description": "The project's name."
+        },
+        "tenderId": {
+          "type": "string",
+          "description": "The tender/RFQ ID."
+        },
+        "client": {
+          "type": "string",
+          "description": "The client's name."
+        },
+        "contractType": {
+          "type": "string",
+          "description": "The project's contract type (e.g., Fixed Price, Cost Plus)."
+        },
+        "securityClassification": {
+          "type": "string",
+          "description": "The project's security classification (e.g., Unclassified, Protected)."
+        },
+        "startDate": {
+          "type": "string",
+          "description": "The project's start date.",
+          "format": "date-time"
+        },
+        "endDate": {
+          "type": "string",
+          "description": "The project's end date.",
+          "format": "date-time"
+        },
+        "wbsPopulationMethod": {
+          "type": "string",
+          "description": "The method used to populate the WBS (e.g., Load from JL2 Templates, Build Custom WBS)."
+        },
+        "profitMargin": {
+          "type": "number",
+          "description": "The default profit margin percentage."
+        },
+        "managementReserve": {
+          "type": "number",
+          "description": "The management reserve percentage."
+        },
+        "contingency": {
+          "type": "number",
+          "description": "The project-specific contingency percentage."
+        },
+        "escalationRate": {
+          "type": "number",
+          "description": "The annual cost escalation rate percentage."
+        },
+        "gstTreatment": {
+          "type": "string",
+          "description": "The default GST treatment (e.g., Exclusive, Inclusive)."
+        },
+        "currency": {
+          "type": "string",
+          "description": "The project currency (e.g., AUD, USD)."
+        },
+        "requiredSecurityClearance": {
+          "type": "string",
+          "description": "The required security clearance for the project team (e.g., N/A, Baseline, NV1)."
+        },
+        "totalCost": {
+          "type": "number",
+          "description": "The total cost of the project. (Calculated and updated by rollup triggers)."
+        }
+      },
+      "required": [
+        "id",
+        "ownerId",
+        "projectName",
+        "tenderId",
+        "client",
+        "contractType",
+        "securityClassification",
+        "startDate",
+        "endDate",
+        "wbsPopulationMethod",
+        "profitMargin",
+        "managementReserve",
+        "contingency",
+        "escalationRate",
+        "gstTreatment",
+        "currency",
+        "requiredSecurityClearance"
+      ]
+    },
+    "Milestone": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Milestone",
+      "type": "object",
+      "description": "Represents a milestone within a project's WBS.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the milestone entity."
+        },
+        "projectId": {
+          "type": "string",
+          "description": "Reference to Project. (Relationship: Project 1:N Milestone)"
+        },
+        "name": {
+          "type": "string",
+          "description": "The milestone's name (e.g., Design Phase)."
+        },
+        "startDate": {
+          "type": "string",
+          "description": "The milestone's start date.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "projectId",
+        "name",
+        "startDate"
+      ]
+    },
+    "LaborItem": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "LaborItem",
+      "type": "object",
+      "description": "Represents a line item of labor cost within a project.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the labor item entity."
+        },
+        "projectId": {
+          "type": "string",
+          "description": "Reference to Project. (Relationship: Project 1:N LaborItem)"
+        },
+        "personnelId": {
+          "type": "string",
+          "description": "Reference to Personnel. (Relationship: Personnel 1:N LaborItem)"
+        },
+        "milestoneId": {
+          "type": "string",
+          "description": "Reference to Milestone. (Relationship: Milestone 1:N LaborItem)"
+        },
+        "hours": {
+          "type": "number",
+          "description": "The number of hours assigned to the labor item."
+        },
+        "applyGA": {
+          "type": "boolean",
+          "description": "Indicates whether G&A should be applied to this labor item."
+        }
+      },
+      "required": [
+        "id",
+        "projectId",
+        "personnelId",
+        "milestoneId",
+        "hours",
+        "applyGA"
+      ]
+    },
+    "MaterialItem": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "MaterialItem",
+      "type": "object",
+      "description": "Represents a line item of material cost within a project.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the material item entity."
+        },
+        "projectId": {
+          "type": "string",
+          "description": "Reference to Project. (Relationship: Project 1:N MaterialItem)"
+        },
+        "materialId": {
+          "type": "string",
+          "description": "Reference to Material. (Relationship: Material 1:N MaterialItem)"
+        },
+        "milestoneId": {
+          "type": "string",
+          "description": "Reference to Milestone. (Relationship: Milestone 1:N MaterialItem)"
+        },
+        "quantity": {
+          "type": "number",
+          "description": "The quantity of the material item."
+        }
+      },
+      "required": [
+        "id",
+        "projectId",
+        "materialId",
+        "milestoneId",
+        "quantity"
+      ]
+    },
+    "AdminUser": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "AdminUser",
+      "type": "object",
+      "description": "Represents a user with administrative privileges.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the admin user entity (Firebase UID)."
+        },
+        "isAdmin": {
+          "type": "boolean",
+          "description": "Indicates whether the user has administrative privileges."
+        }
+      },
+      "required": [
+        "id",
+        "isAdmin"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profile information.  The 'userId' parameter is the Firebase UID.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The Firebase UID of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/workspaces/{workspaceId}",
+        "definition": {
+          "entityName": "Workspace",
+          "schema": {
+            "$ref": "#/backend/entities/Workspace"
+          },
+          "description": "Represents the workspace configuration. Only one document exists here with workspaceId = 'jl2g'.",
+          "params": [
+            {
+              "name": "workspaceId",
+              "description": "The ID of the workspace (e.g., 'jl2g')."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/workspaces/{workspaceId}/personnel/{personnelId}",
+        "definition": {
+          "entityName": "Personnel",
+          "schema": {
+            "$ref": "#/backend/entities/Personnel"
+          },
+          "description": "Stores personnel data managed by admins within a workspace.",
+          "params": [
+            {
+              "name": "workspaceId",
+              "description": "The ID of the workspace (e.g., 'jl2g')."
+            },
+            {
+              "name": "personnelId",
+              "description": "The unique identifier for the personnel entity."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/workspaces/{workspaceId}/materials/{materialId}",
+        "definition": {
+          "entityName": "Material",
+          "schema": {
+            "$ref": "#/backend/entities/Material"
+          },
+          "description": "Stores material data managed by admins within a workspace.",
+          "params": [
+            {
+              "name": "workspaceId",
+              "description": "The ID of the workspace (e.g., 'jl2g')."
+            },
+            {
+              "name": "materialId",
+              "description": "The unique identifier for the material entity."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/workspaces/{workspaceId}/milestoneTemplates/{milestoneTemplateId}",
+        "definition": {
+          "entityName": "MilestoneTemplate",
+          "schema": {
+            "$ref": "#/backend/entities/MilestoneTemplate"
+          },
+          "description": "Stores milestone template data managed by admins within a workspace.",
+          "params": [
+            {
+              "name": "workspaceId",
+              "description": "The ID of the workspace (e.g., 'jl2g')."
+            },
+            {
+              "name": "milestoneTemplateId",
+              "description": "The unique identifier for the milestone template entity."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/workspaces/{workspaceId}/ga_costs/{gaCostId}",
+        "definition": {
+          "entityName": "GACost",
+          "schema": {
+            "$ref": "#/backend/entities/GACost"
+          },
+          "description": "Stores G&A cost data managed by admins within a workspace.",
+          "params": [
+            {
+              "name": "workspaceId",
+              "description": "The ID of the workspace (e.g., 'jl2g')."
+            },
+            {
+              "name": "gaCostId",
+              "description": "The unique identifier for the G&A cost entity."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/projects/{projectId}",
+        "definition": {
+          "entityName": "Project",
+          "schema": {
+            "$ref": "#/backend/entities/Project"
+          },
+          "description": "Stores project data. Includes denormalized 'ownerId' for authorization independence.",
+          "params": [
+            {
+              "name": "projectId",
+              "description": "The unique identifier for the project entity."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/projects/{projectId}/milestones/{milestoneId}",
+        "definition": {
+          "entityName": "Milestone",
+          "schema": {
+            "$ref": "#/backend/entities/Milestone"
+          },
+          "description": "Stores milestones associated with a project.",
+          "params": [
+            {
+              "name": "projectId",
+              "description": "The unique identifier for the project entity."
+            },
+            {
+              "name": "milestoneId",
+              "description": "The unique identifier for the milestone entity."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/projects/{projectId}/laborItems/{laborItemId}",
+        "definition": {
+          "entityName": "LaborItem",
+          "schema": {
+            "$ref": "#/backend/entities/LaborItem"
+          },
+          "description": "Stores labor items associated with a project.",
+          "params": [
+            {
+              "name": "projectId",
+              "description": "The unique identifier for the project entity."
+            },
+            {
+              "name": "laborItemId",
+              "description": "The unique identifier for the labor item entity."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/projects/{projectId}/materialItems/{materialItemId}",
+        "definition": {
+          "entityName": "MaterialItem",
+          "schema": {
+            "$ref": "#/backend/entities/MaterialItem"
+          },
+          "description": "Stores material items associated with a project.",
+          "params": [
+            {
+              "name": "projectId",
+              "description": "The unique identifier for the project entity."
+            },
+            {
+              "name": "materialItemId",
+              "description": "The unique identifier for the material item entity."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/adminUsers/{adminUserId}",
+        "definition": {
+          "entityName": "AdminUser",
+          "schema": {
+            "$ref": "#/backend/entities/AdminUser"
+          },
+          "description": "Stores admin user IDs. Existence of a document indicates admin privileges.",
+          "params": [
+            {
+              "name": "adminUserId",
+              "description": "The Firebase UID of the admin user."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure is designed to support the JL2G Costing Platform's requirements for secure, scalable, and maintainable data management, emphasizing Authorization Independence. The core principle revolves around avoiding hierarchical authorization dependencies to ensure atomic operations and simplified security rules. This is achieved through denormalization, where relevant authorization context is copied into subcollections. For the initial build with anonymous authentication, the structure focuses on user-owned projects and admin-managed settings.\n\n**Authorization Independence (Denormalization):**\n*   `Projects` subcollections (`milestones`, `laborItems`, `materialItems`) do NOT inherit authorization from the `Workspace`. Instead, the `ownerId` field is present in the project document, enabling direct authorization based on `request.auth.uid` without requiring `get()` calls to parent documents.\n\n**Structural Segregation (Homogeneous Security Posture):**\n*   `Projects` are stored separately from `Workspaces`, ensuring that project data (user-specific) and settings data (admin-managed) have distinct security requirements. This prevents mixing data with different access needs in the same collection.\n\n**Access Modeling (Standardization and Consistency):**\n*   **Private Data:** The `/users/{userId}/` collection uses Path-Based ownership for user profiles.\n*   **Hierarchical Paths for User-Owned Data:** The `/projects/{projectId}` collection is owned by users.\n\n**QAPs (Rules are not Filters):**\n*   The structure supports secure `list` operations by ensuring that collections only contain documents with consistent security requirements. For example, listing projects is secure because each project document contains the `ownerId`, enabling filtering based on `request.auth.uid`.\n\n**Workspace-Centric Settings:**\n*   Workspace (`workspaces/jl2g`) contains subcollections like `personnel`, `materials`, and `milestoneTemplates` for admin-managed settings. This centralized approach simplifies management and ensures consistency across projects.\n\nThe `adminUsers` collection supports role-based access control (DBAC) via existence checks, simplifying admin privilege verification in security rules.\n\nThis structure facilitates simple, robust, and easily debuggable Firestore Security Rules, aligning with the core design principles and strategy mandates."
+  }
+}
