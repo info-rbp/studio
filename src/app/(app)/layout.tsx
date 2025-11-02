@@ -23,7 +23,7 @@ import {
 import { Icons } from '@/components/icons';
 import { LayoutDashboard, Settings, BookOpen } from 'lucide-react';
 
-// Mock user for development
+// Mock user for development, bypassing login
 const mockUser = {
   fullName: 'Admin User',
   email: 'admin@example.com',
@@ -36,6 +36,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const getInitials = (name = '') => {
     return name.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase();
   };
+
+  // The problematic redirect logic has been removed from here.
+  // We are now relying solely on the mockUser to simulate a logged-in state.
 
   return (
     <SidebarProvider>

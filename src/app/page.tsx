@@ -9,7 +9,7 @@ export default function HomePage() {
 
   useEffect(() => {
     // Redirect directly to the dashboard, bypassing login for now.
-    router.push('/dashboard');
+    router.replace('/dashboard');
   }, [router]);
 
   return (
