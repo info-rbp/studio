@@ -22,11 +22,11 @@ import {
 } from '@/components/ui/avatar';
 import { Icons } from '@/components/icons';
 import { LayoutDashboard, Settings } from 'lucide-react';
-import { useAuth } from '@/hooks/use-auth';
+import { useUser } from '@/firebase';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { user } = useAuth();
+  const { user } = useUser();
   const [open, setOpen] = useState(true);
 
   const getInitials = (uid = '') => {
