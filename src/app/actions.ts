@@ -2,7 +2,26 @@
 
 import { aiProjectStarter } from '@/ai/flows/ai-project-starter';
 import { projectSchema, type Project } from '@/lib/types';
-import { ZodError } from 'zod';
+import { getAdminApp } from '@/firebase/admin';
+import { z } from 'zod';
+import { auth, firestore } from 'firebase-admin';
+
+const newUserSchema = z.object({
+  fullName: z.string().min(1, 'Full Name is required.'),
+  email: z.string().email('Invalid email address.'),
+  password: z.string().min(6, 'Password must be at least 6 characters.'),
+  accessLevel: z.enum(['Tender Lead', 'Manager', 'Admin']),
+});
+type NewUserFormData = z.infer<typeof newUserSchema>;
+
+
+// TODO: Check if caller is an admin
+// const checkIsAdmin = async (uid: string) => {
+//   const userDoc = await firestore().collection('users').doc(uid).get();
+//   if (!userDoc.exists || userDoc.data()?.accessLevel !== 'Admin') {
+//     throw new Error('Permission denied. Not an admin.');
+//   }
+// }
 
 export async function createProjectWithAI(description: string) {
   try {
@@ -23,7 +42,7 @@ export async function createProjectWithAI(description: string) {
 
     return { success: true, data: parsed };
   } catch (error) {
-    if (error instanceof ZodError) {
+    if (error instanceof z.ZodError) {
         console.error('AI output validation failed:', error.errors);
         return { success: false, error: 'AI returned data in an unexpected format.' };
     }
@@ -43,4 +62,63 @@ export async function createProject(projectData: Project) {
     console.error('Project creation failed:', error);
     return { success: false, error: 'Failed to create project.' };
   }
+}
+
+export async function createUser(userData: NewUserFormData) {
+    try {
+      getAdminApp(); // Ensure admin app is initialized
+  
+      // TODO: Add admin check here
+  
+      const userRecord = await auth().createUser({
+        email: userData.email,
+        password: userData.password,
+        displayName: userData.fullName,
+      });
+  
+      await firestore().collection('users').doc(userRecord.uid).set({
+        id: userRecord.uid,
+        fullName: userData.fullName,
+        email: userData.email,
+        accessLevel: userData.accessLevel,
+        isDeletable: true,
+        createdAt: new Date(),
+        isAnonymous: false,
+      });
+  
+      return { success: true, data: { uid: userRecord.uid } };
+    } catch (error: any) {
+      console.error('User creation failed:', error);
+      const errorMessage = error.code === 'auth/email-already-exists'
+        ? 'A user with this email address already exists.'
+        : error.message || 'Failed to create user.';
+      return { success: false, error: errorMessage };
+    }
+}
+  
+export async function deleteUser(uidToDelete: string) {
+    try {
+      getAdminApp(); // Ensure admin app is initialized
+  
+      // TODO: Add admin check here
+  
+      const userDocRef = firestore().collection('users').doc(uidToDelete);
+      const userDoc = await userDocRef.get();
+  
+      if (!userDoc.exists) {
+        return { success: false, error: 'User not found in Firestore.' };
+      }
+  
+      if (userDoc.data()?.isDeletable === false) {
+        return { success: false, error: 'This user is protected and cannot be deleted.' };
+      }
+  
+      await auth().deleteUser(uidToDelete);
+      await userDocRef.delete();
+  
+      return { success: true };
+    } catch (error: any) {
+      console.error('User deletion failed:', error);
+      return { success: false, error: error.message || 'Failed to delete user.' };
+    }
 }

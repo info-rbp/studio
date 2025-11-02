@@ -2,7 +2,7 @@
 
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
 import { FirebaseApp } from 'firebase/app';
-import { Firestore, doc, setDoc } from 'firebase/firestore';
+import { Firestore, doc, setDoc, getDoc } from 'firebase/firestore';
 import { Auth, User, onAuthStateChanged } from 'firebase/auth';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener'
 
@@ -78,15 +78,22 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 
     const unsubscribe = onAuthStateChanged(
       auth,
-      (firebaseUser) => { // Auth state determined
+      async (firebaseUser) => { // Auth state determined
         if (firebaseUser) {
           const userRef = doc(firestore, 'users', firebaseUser.uid);
-          setDoc(userRef, { 
-            id: firebaseUser.uid,
-            email: firebaseUser.email,
-            isAnonymous: firebaseUser.isAnonymous,
-            createdAt: new Date()
-          }, { merge: true });
+          const userSnap = await getDoc(userRef);
+          if (!userSnap.exists()) {
+             // This is likely a new user signing up, let's create their doc
+             await setDoc(userRef, { 
+                id: firebaseUser.uid,
+                fullName: firebaseUser.displayName || 'New User',
+                email: firebaseUser.email,
+                isAnonymous: firebaseUser.isAnonymous,
+                accessLevel: 'Tender Lead',
+                isDeletable: true,
+                createdAt: new Date()
+             }, { merge: true });
+          }
         }
         setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: null });
       },
