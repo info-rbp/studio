@@ -158,9 +158,13 @@
           "type": "number",
           "description": "The material's default unit cost."
         },
-        "costFrequency": {
+        "costType": {
           "type": "string",
-          "description": "The frequency of the material's cost (e.g., Monthly, One-Time)."
+          "description": "The cost type of the material (e.g., Monthly, One-Time)."
+        },
+        "classification": {
+            "type": "string",
+            "description": "The material classification (e.g., Software, Hardware)."
         }
       },
       "required": [
@@ -168,7 +172,48 @@
         "workspaceId",
         "name",
         "defaultUnitCost",
-        "costFrequency"
+        "costType",
+        "classification"
+      ]
+    },
+    "MaterialClassification": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "MaterialClassification",
+      "type": "object",
+      "description": "Represents a material classification.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the classification."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the classification (e.g., 'Software')."
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ]
+    },
+    "CostType": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "CostType",
+      "type": "object",
+      "description": "Represents a cost type.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the cost type."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the cost type (e.g., 'One-Time')."
+        }
+      },
+      "required": [
+        "id",
+        "name"
       ]
     },
     "MilestoneTemplate": {
@@ -570,6 +615,46 @@
             {
               "name": "materialId",
               "description": "The unique identifier for the material entity."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/workspaces/{workspaceId}/materialClassifications/{materialClassificationId}",
+        "definition": {
+          "entityName": "MaterialClassification",
+          "schema": {
+            "$ref": "#/backend/entities/MaterialClassification"
+          },
+          "description": "Stores material classification options managed by admins.",
+          "params": [
+            {
+              "name": "workspaceId",
+              "description": "The ID of the workspace (e.g., 'jl2g')."
+            },
+            {
+              "name": "materialClassificationId",
+              "description": "The unique identifier for the classification."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/workspaces/{workspaceId}/costTypes/{costTypeId}",
+        "definition": {
+          "entityName": "CostType",
+          "schema": {
+            "$ref": "#/backend/entities/CostType"
+          },
+          "description": "Stores cost type options managed by admins.",
+          "params": [
+            {
+              "name": "workspaceId",
+              "description": "The ID of the workspace (e.g., 'jl2g')."
+            },
+            {
+              "name": "costTypeId",
+              "description": "The unique identifier for the cost type."
             }
           ]
         }

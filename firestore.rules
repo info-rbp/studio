@@ -108,6 +108,26 @@ service cloud.firestore {
         }
 
         /**
+         * @description Allows admins to read and write material classification data within a workspace.
+         * @path /workspaces/{workspaceId}/materialClassifications/{materialClassificationId}
+         * @allow (get, list, create, update, delete) if isAdmin()
+         * @principle Enforces admin-only access for material classification management.
+         */
+        match /materialClassifications/{materialClassificationId} {
+            allow read, write: if isAdmin();
+        }
+
+        /**
+         * @description Allows admins to read and write cost type data within a workspace.
+         * @path /workspaces/{workspaceId}/costTypes/{costTypeId}
+         * @allow (get, list, create, update, delete) if isAdmin()
+         * @principle Enforces admin-only access for cost type management.
+         */
+        match /costTypes/{costTypeId} {
+            allow read, write: if isAdmin();
+        }
+
+        /**
          * @description Allows admins to read and write milestone template data within a workspace.
          * @path /workspaces/{workspaceId}/milestoneTemplates/{milestoneTemplateId}
          * @allow (get, list, create, update, delete) if isAdmin()
