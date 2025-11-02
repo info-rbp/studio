@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, HardHat, ListChecks, Building, ShieldCheck, ArrowRight, Plug } from 'lucide-react';
+import { Users, HardHat, ListChecks, Building, ShieldCheck, ArrowRight, Plug, DollarSign } from 'lucide-react';
 
 const adminSections = [
   {
@@ -25,10 +25,10 @@ const adminSections = [
     icon: ListChecks,
   },
   {
-    title: 'G&A Costs',
-    description: 'Manage General and Administrative cost structures.',
+    title: 'Financial Management',
+    description: 'Manage financial settings like General and Administrative cost structures.',
     href: '/admin/ga-costs',
-    icon: Users,
+    icon: DollarSign,
   },
   {
     title: 'User Management',
