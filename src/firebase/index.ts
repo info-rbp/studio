@@ -24,8 +24,8 @@ export function getSdks(firebaseApp: FirebaseApp) {
         // IMPORTANT: Do not move these connect calls outside of the DEV block.
         // They should only run in development.
         console.log("Connecting to local Firebase emulators.");
-        connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
-        connectFirestoreEmulator(firestore, 'localhost', 9098);
+        // connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
+        // connectFirestoreEmulator(firestore, 'localhost', 9098);
     } catch (e: any) {
         // The "already-initialized" errors are expected if hot-reloading.
         if (e.code !== 'auth/emulator-config-failed' && e.code !== 'firestore/emulator-config-failed') {
