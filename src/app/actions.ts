@@ -139,16 +139,19 @@ export async function seedInitialUser() {
         getAdminApp();
         const email = "info@remotebusinesspartner.com.au";
         let userRecord;
+
         try {
             userRecord = await auth().getUserByEmail(email);
         } catch (error: any) {
             if (error.code === 'auth/user-not-found') {
+                console.log(`Creating user ${email} as they were not found.`);
                 userRecord = await auth().createUser({
                     email: email,
                     password: "Foxtrot19!",
                     displayName: "Gianpaulo Coletti"
                 });
             } else {
+                // For other errors (e.g., network issues), rethrow them.
                 throw error;
             }
         }
@@ -156,26 +159,42 @@ export async function seedInitialUser() {
         const protectedUid = userRecord.uid;
         const userDocRef = firestore().collection('users').doc(protectedUid);
         const adminUserDocRef = firestore().collection('adminUsers').doc(protectedUid);
+        const db = firestore();
 
-        if (!(await userDocRef.get()).exists) {
-            await userDocRef.set({
-                id: protectedUid,
-                fullName: "Gianpaulo Coletti",
-                email: email,
-                accessLevel: "Admin",
-                isDeletable: false,
-                createdAt: new Date(),
-                isAnonymous: false,
-            });
-        }
+        // Use a transaction to ensure atomicity
+        await db.runTransaction(async (transaction) => {
+            const userDoc = await transaction.get(userDocRef);
+            const adminDoc = await transaction.get(adminUserDocRef);
+
+            if (!userDoc.exists) {
+                console.log(`Creating Firestore user document for ${email}.`);
+                transaction.set(userDocRef, {
+                    id: protectedUid,
+                    fullName: "Gianpaulo Coletti",
+                    email: email,
+                    accessLevel: "Admin", // Corrected Access Level
+                    isDeletable: false,   // Ensure user is not deletable
+                    createdAt: new Date(),
+                    isAnonymous: false,
+                });
+            } else {
+                // If the user doc exists, ensure the correct fields are set
+                 transaction.update(userDocRef, {
+                    accessLevel: "Admin",
+                    isDeletable: false
+                });
+            }
+            
+            if (!adminDoc.exists) {
+                console.log(`Creating admin record for ${email}.`);
+                transaction.set(adminUserDocRef, { isAdmin: true });
+            }
+        });
         
-        if (!(await adminUserDocRef.get()).exists) {
-            await adminUserDocRef.set({ isAdmin: true });
-        }
-
-        return { success: true };
+        console.log(`User ${email} is correctly configured.`);
+        return { success: true, message: `User ${email} is correctly configured.` };
     } catch (error: any) {
-        console.error("Error seeding protected user:", error);
+        console.error("Error seeding protected user:", error.message);
         return { success: false, error: "Failed to seed initial user." };
     }
 }
