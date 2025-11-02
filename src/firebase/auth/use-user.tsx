@@ -54,46 +54,39 @@ export const useUser = (auth: Auth, firestore: Firestore): UserAuthState => {
 
     const unsubscribeAuth = onAuthStateChanged(
       auth,
-      async (firebaseUser) => {
+      (firebaseUser) => {
         if (firebaseUser) {
           const userDocRef = doc(firestore, 'users', firebaseUser.uid);
           
-          // Set up the real-time listener for the profile first
-          const unsubscribeProfile = onSnapshot(userDocRef, 
-            async (docSnap) => {
-              if (docSnap.exists()) {
-                setUserAuthState({ 
-                  user: firebaseUser, 
-                  userProfile: docSnap.data() as UserProfile, 
-                  isUserLoading: false, 
-                  userError: null 
-                });
-              } else {
-                 // Document doesn't exist, so create it.
-                const newUserProfile: UserProfile = {
-                  id: firebaseUser.uid,
-                  fullName: firebaseUser.displayName || 'Anonymous User',
-                  email: firebaseUser.email || null, // Will be null for anonymous
-                  accessLevel: 'Tender Lead', // All new users default to base level
-                  isDeletable: true,
-                  isAnonymous: firebaseUser.isAnonymous,
-                  createdAt: serverTimestamp(),
-                };
-                try {
-                  await setDoc(userDocRef, newUserProfile);
-                  console.log(`Created user document for anonymous user: ${firebaseUser.uid}`);
-                  // The listener will pick up the new document and update the state.
-                } catch (error) {
-                  console.error("Failed to create user document:", error);
-                  setUserAuthState({ user: firebaseUser, userProfile: null, isUserLoading: false, userError: error as Error });
-                }
-              }
-            },
-            (error) => {
-               console.error("onSnapshot error for user profile:", error);
-               setUserAuthState({ user: firebaseUser, userProfile: null, isUserLoading: false, userError: error });
+          const unsubscribeProfile = onSnapshot(userDocRef, (docSnap) => {
+            if (docSnap.exists()) {
+              setUserAuthState({
+                user: firebaseUser,
+                userProfile: docSnap.data() as UserProfile,
+                isUserLoading: false,
+                userError: null,
+              });
+            } else {
+              // Profile doesn't exist, create it.
+              const newUserProfile: UserProfile = {
+                id: firebaseUser.uid,
+                fullName: firebaseUser.displayName || 'Anonymous User',
+                email: firebaseUser.email || null,
+                accessLevel: 'Tender Lead',
+                isDeletable: true,
+                isAnonymous: firebaseUser.isAnonymous,
+                createdAt: serverTimestamp(),
+              };
+              setDoc(userDocRef, newUserProfile).catch((error) => {
+                console.error("Failed to create user document:", error);
+                setUserAuthState({ user: firebaseUser, userProfile: null, isUserLoading: false, userError: error as Error });
+              });
+              // The onSnapshot listener will then pick up the newly created document and update the state.
             }
-          );
+          }, (error) => {
+            console.error("onSnapshot error for user profile:", error);
+            setUserAuthState({ user: firebaseUser, userProfile: null, isUserLoading: false, userError: error });
+          });
           
           return () => unsubscribeProfile();
 

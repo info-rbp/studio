@@ -6,26 +6,18 @@ import { initializeFirebase } from '@/firebase';
 import { getAuth, onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 import { Loader2 } from 'lucide-react';
 
-interface FirebaseClientProviderProps {
-  children: ReactNode;
-}
-
 // Initialize Firebase services once when the module is loaded.
 const firebaseServices = initializeFirebase();
 
-export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
+export function FirebaseClientProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
-  const [hasInitialized, setHasInitialized] = useState(false);
 
   useEffect(() => {
-    if (hasInitialized) return;
-
     const auth = getAuth(firebaseServices.firebaseApp);
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         // User is signed in (either normally or anonymously).
         setIsLoading(false);
-        setHasInitialized(true);
       } else {
         // No user is signed in. Attempt to sign in anonymously.
         try {
@@ -36,13 +28,12 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
           console.error("Critical: Anonymous sign-in failed:", error);
           // Handle critical error, maybe show an error screen
           setIsLoading(false);
-          setHasInitialized(true);
         }
       }
     });
 
     return () => unsubscribe();
-  }, [hasInitialized]);
+  }, []);
 
 
   if (isLoading) {
