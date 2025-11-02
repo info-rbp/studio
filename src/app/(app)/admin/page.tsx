@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, HardHat, ListChecks, Building, ShieldCheck, ArrowRight, SlidersHorizontal, Plug } from 'lucide-react';
+import { Users, HardHat, ListChecks, Building, ShieldCheck, ArrowRight, Plug } from 'lucide-react';
 
 const adminSections = [
   {
@@ -35,12 +35,6 @@ const adminSections = [
     description: 'Promote or revoke Admin privileges for users.',
     href: '/admin/users',
     icon: ShieldCheck,
-  },
-  {
-    title: 'Settings Management',
-    description: 'Configure application-wide settings and preferences.',
-    href: '/admin/settings',
-    icon: SlidersHorizontal,
   },
   {
     title: 'Integrations Management',
