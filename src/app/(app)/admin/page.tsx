@@ -70,10 +70,27 @@ const materialSchema = z.object({
 
 type MaterialFormData = z.infer<typeof materialSchema>;
 
+// Zod schema for the milestone template form
+const milestoneTemplateSchema = z.object({
+  name: z.string().min(1, 'Name is required.'),
+});
+
+type MilestoneTemplateFormData = z.infer<typeof milestoneTemplateSchema>;
+
+// Zod schema for the G&A cost form
+const gaCostSchema = z.object({
+  name: z.string().min(1, 'Name is required.'),
+  value: z.coerce.number().min(0, 'Value must be a positive number.'),
+});
+
+type GACostFormData = z.infer<typeof gaCostSchema>;
+
 
 export default function AdminPage() {
   const [isPersonnelDialogOpen, setIsPersonnelDialogOpen] = useState(false);
   const [isMaterialDialogOpen, setIsMaterialDialogOpen] = useState(false);
+  const [isMilestoneDialogOpen, setIsMilestoneDialogOpen] = useState(false);
+  const [isGaCostDialogOpen, setIsGaCostDialogOpen] = useState(false);
   const firestore = useFirestore();
 
   // Personnel data
@@ -124,10 +141,53 @@ export default function AdminPage() {
     setIsMaterialDialogOpen(false);
   };
 
+  // Milestone Template data
+  const milestoneTemplateCollectionRef = useMemoFirebase(
+    () => (firestore ? collection(firestore, 'workspaces/jl2g/milestoneTemplates') : null),
+    [firestore]
+  );
+  const { data: milestoneTemplates, isLoading: isLoadingMilestoneTemplates } = useCollection<MilestoneTemplateFormData>(milestoneTemplateCollectionRef);
+
+  const milestoneTemplateForm = useForm<MilestoneTemplateFormData>({
+    resolver: zodResolver(milestoneTemplateSchema),
+    defaultValues: {
+      name: '',
+    },
+  });
+
+  const onMilestoneTemplateSubmit = (data: MilestoneTemplateFormData) => {
+    if (!milestoneTemplateCollectionRef) return;
+    addDocumentNonBlocking(milestoneTemplateCollectionRef, data);
+    milestoneTemplateForm.reset();
+    setIsMilestoneDialogOpen(false);
+  };
+
+  // G&A Cost data
+  const gaCostCollectionRef = useMemoFirebase(
+    () => (firestore ? collection(firestore, 'workspaces/jl2g/ga_costs') : null),
+    [firestore]
+  );
+  const { data: gaCosts, isLoading: isLoadingGACosts } = useCollection<GACostFormData>(gaCostCollectionRef);
+
+  const gaCostForm = useForm<GACostFormData>({
+    resolver: zodResolver(gaCostSchema),
+    defaultValues: {
+      name: '',
+      value: 0,
+    },
+  });
+
+  const onGACostSubmit = (data: GACostFormData) => {
+    if (!gaCostCollectionRef) return;
+    addDocumentNonBlocking(gaCostCollectionRef, data);
+    gaCostForm.reset();
+    setIsGaCostDialogOpen(false);
+  };
+
   return (
     <div className="flex flex-1 flex-col gap-4">
       <h1 className="text-2xl font-bold">Admin Settings</h1>
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
@@ -406,6 +466,199 @@ export default function AdminPage() {
                       <TableCell className="text-right">
                         ${m.defaultUnitCost.toFixed(2)}
                       </TableCell>
+                      <TableCell>
+                        <Button aria-haspopup="true" size="icon" variant="ghost" disabled>
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Toggle menu</span>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Milestone Templates</CardTitle>
+              <CardDescription>
+                Manage preset WBS/milestone items for projects.
+              </CardDescription>
+            </div>
+            <Dialog open={isMilestoneDialogOpen} onOpenChange={setIsMilestoneDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="gap-1">
+                  <PlusCircle className="h-3.5 w-3.5" />
+                  <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                    Add Template
+                  </span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add New Milestone Template</DialogTitle>
+                </DialogHeader>
+                <Form {...milestoneTemplateForm}>
+                  <form onSubmit={milestoneTemplateForm.handleSubmit(onMilestoneTemplateSubmit)} className="space-y-4">
+                    <FormField
+                      control={milestoneTemplateForm.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Template Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g., Project Initiation" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <DialogFooter>
+                      <Button type="button" variant="outline" onClick={() => setIsMilestoneDialogOpen(false)}>
+                        Cancel
+                      </Button>
+                      <Button type="submit">Save Template</Button>
+                    </DialogFooter>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>
+                    <span className="sr-only">Actions</span>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoadingMilestoneTemplates && (
+                  <TableRow>
+                    <TableCell colSpan={2} className="text-center">
+                      Loading templates...
+                    </TableCell>
+                  </TableRow>
+                )}
+                {!isLoadingMilestoneTemplates && !milestoneTemplates?.length ? (
+                  <TableRow>
+                    <TableCell colSpan={2} className="text-center">
+                      No milestone templates found.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  milestoneTemplates?.map((template) => (
+                    <TableRow key={template.id}>
+                      <TableCell className="font-medium">{template.name}</TableCell>
+                      <TableCell>
+                        <Button aria-haspopup="true" size="icon" variant="ghost" disabled>
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Toggle menu</span>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>G&amp;A Costs</CardTitle>
+              <CardDescription>
+                Manage General and Administrative cost structures.
+              </CardDescription>
+            </div>
+            <Dialog open={isGaCostDialogOpen} onOpenChange={setIsGaCostDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="gap-1">
+                  <PlusCircle className="h-3.5 w-3.5" />
+                  <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                    Add G&amp;A Cost
+                  </span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add New G&amp;A Cost</DialogTitle>
+                </DialogHeader>
+                <Form {...gaCostForm}>
+                  <form onSubmit={gaCostForm.handleSubmit(onGACostSubmit)} className="space-y-4">
+                    <FormField
+                      control={gaCostForm.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g., Corporate Overhead" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={gaCostForm.control}
+                      name="value"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Value (%)</FormLabel>
+                          <FormControl>
+                            <Input type="number" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <DialogFooter>
+                      <Button type="button" variant="outline" onClick={() => setIsGaCostDialogOpen(false)}>
+                        Cancel
+                      </Button>
+                      <Button type="submit">Save G&amp;A Cost</Button>
+                    </DialogFooter>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead className="text-right">Value (%)</TableHead>
+                  <TableHead>
+                    <span className="sr-only">Actions</span>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoadingGACosts && (
+                  <TableRow>
+                    <TableCell colSpan={3} className="text-center">
+                      Loading G&amp;A costs...
+                    </TableCell>
+                  </TableRow>
+                )}
+                {!isLoadingGACosts && !gaCosts?.length ? (
+                  <TableRow>
+                    <TableCell colSpan={3} className="text-center">
+                      No G&amp;A costs found.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  gaCosts?.map((cost) => (
+                    <TableRow key={cost.id}>
+                      <TableCell className="font-medium">{cost.name}</TableCell>
+                      <TableCell className="text-right">{cost.value.toFixed(2)}%</TableCell>
                       <TableCell>
                         <Button aria-haspopup="true" size="icon" variant="ghost" disabled>
                           <MoreHorizontal className="h-4 w-4" />
